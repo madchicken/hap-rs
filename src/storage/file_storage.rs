@@ -11,7 +11,11 @@ use std::{
 use tokio::task::spawn_blocking;
 use uuid::Uuid;
 
-use crate::{Config, Error, Result, pairing::Pairing, storage::Storage};
+use crate::{
+    Config, Error, Result,
+    pairing::{Pairing, Permissions},
+    storage::Storage,
+};
 
 /// [`FileStorage`](FileStorage) is an implementor of the [`Storage`](Storage) trait that stores data to the file
 /// system.
@@ -181,7 +185,11 @@ impl Storage for FileStorage {
 
     async fn load_pairing(&self, id: &Uuid) -> Result<Pairing> {
         let key = format!("pairings/{id}.json");
-        let pairing_bytes = self.read_bytes(&key).await?;
+        let pairing_bytes = match self.read_bytes(&key).await {
+            Ok(pairing) => pairing,
+            _ => self.read_bytes("pairings/admin.json").await?,
+        };
+
         let pairing = Pairing::from_bytes(&pairing_bytes)?;
 
         debug!("loaded Pairing: {:?}", &pairing);
@@ -190,7 +198,11 @@ impl Storage for FileStorage {
     }
 
     async fn save_pairing(&mut self, pairing: &Pairing) -> Result<()> {
-        let key = format!("pairings/{}.json", pairing.id);
+        if pairing.permissions == Permissions::Admin {
+            let pairing_bytes = pairing.as_bytes()?;
+            self.write_bytes("pairings/admin.json", pairing_bytes).await?;
+        }
+        let key = format!("pairings/{}.json", pairing.id.to_string());
         let pairing_bytes = pairing.as_bytes()?;
         self.write_bytes(&key, pairing_bytes).await
     }
