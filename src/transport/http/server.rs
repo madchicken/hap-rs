@@ -3,7 +3,7 @@ use futures::{
     future::{self, BoxFuture, Future, FutureExt, TryFutureExt},
     lock::Mutex,
 };
-use hyper::{server::conn::Http, service::Service, Body, Method, Request, Response, StatusCode};
+use hyper::{Body, Method, Request, Response, StatusCode, server::conn::Http, service::Service};
 use log::{debug, error, info};
 use std::{
     net::SocketAddr,
@@ -14,29 +14,25 @@ use std::{
 use tokio::net::TcpListener;
 
 use crate::{
+    Error, Result,
     event::Event,
     pointer,
     transport::{
         http::{
-            event_response,
+            EventObject, event_response,
             handler::{
+                HandlerExt, JsonHandler, TlvHandler,
                 accessories::Accessories,
                 characteristics::{GetCharacteristics, UpdateCharacteristics},
                 identify::Identify,
                 pair_setup::PairSetup,
                 pair_verify::PairVerify,
                 pairings::Pairings,
-                HandlerExt,
-                JsonHandler,
-                TlvHandler,
             },
             status_response,
-            EventObject,
         },
         tcp::{EncryptedStream, Session, StreamWrapper},
     },
-    Error,
-    Result,
 };
 
 struct Handlers {
@@ -123,7 +119,7 @@ impl Service<Request<Body>> for Api {
 
         let fut = async move {
             match handler.take() {
-                Some(handler) =>
+                Some(handler) => {
                     handler
                         .lock()
                         .await
@@ -137,7 +133,8 @@ impl Service<Request<Body>> for Api {
                             accessory_database,
                             event_emitter,
                         )
-                        .await,
+                        .await
+                },
                 None => future::ready(status_response(StatusCode::NOT_FOUND)).await,
             }
         }
@@ -173,7 +170,7 @@ impl Server {
         }
     }
 
-    pub fn run_handle(&self) -> BoxFuture<Result<()>> {
+    pub fn run_handle(&self) -> BoxFuture<'_, Result<()>> {
         let config = self.config.clone();
         let storage = self.storage.clone();
         let accessory_database = self.accessory_database.clone();

@@ -1,11 +1,11 @@
-use aead::{generic_array::GenericArray, AeadInPlace, KeyInit};
+use aead::{AeadInPlace, KeyInit, generic_array::GenericArray};
 use chacha20poly1305::ChaCha20Poly1305;
 use ed25519_dalek::ed25519::signature::SignerMut;
 use futures::{
     channel::oneshot,
     future::{BoxFuture, FutureExt},
 };
-use hyper::{body::Buf, Body};
+use hyper::{Body, body::Buf};
 use log::{debug, info};
 use std::str;
 use uuid::Uuid;
@@ -57,7 +57,7 @@ impl TlvHandlerExt for PairVerify {
     type ParseResult = Step;
     type Result = tlv::Container;
 
-    fn parse(&self, body: Body) -> BoxFuture<Result<Step, tlv::ErrorContainer>> {
+    fn parse(&self, body: Body) -> BoxFuture<'_, Result<Step, tlv::ErrorContainer>> {
         async {
             let aggregated_body = hyper::body::aggregate(body)
                 .await
@@ -101,7 +101,7 @@ impl TlvHandlerExt for PairVerify {
         config: pointer::Config,
         storage: pointer::Storage,
         _: pointer::EventEmitter,
-    ) -> BoxFuture<Result<tlv::Container, tlv::ErrorContainer>> {
+    ) -> BoxFuture<'_, Result<tlv::Container, tlv::ErrorContainer>> {
         async move {
             match step {
                 Step::Start { a_pub } => match handle_start(self, config, a_pub).await {

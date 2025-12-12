@@ -1,9 +1,9 @@
+use ed25519_dalek::PUBLIC_KEY_LENGTH;
 use futures::future::{BoxFuture, FutureExt};
-use hyper::{body::Buf, Body};
+use hyper::{Body, body::Buf};
 use log::{debug, info};
 use std::{ops::Deref, str};
 use uuid::Uuid;
-use ed25519_dalek::PUBLIC_KEY_LENGTH;
 
 use crate::{
     event::Event,
@@ -16,7 +16,9 @@ use crate::{
 pub struct Pairings;
 
 impl Pairings {
-    pub fn new() -> Pairings { Pairings }
+    pub fn new() -> Pairings {
+        Pairings
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -48,7 +50,7 @@ impl TlvHandlerExt for Pairings {
     type ParseResult = HandlerType;
     type Result = tlv::Container;
 
-    fn parse(&self, body: Body) -> BoxFuture<Result<HandlerType, tlv::ErrorContainer>> {
+    fn parse(&self, body: Body) -> BoxFuture<'_, Result<HandlerType, tlv::ErrorContainer>> {
         async {
             let aggregated_body = hyper::body::aggregate(body)
                 .await
@@ -102,7 +104,7 @@ impl TlvHandlerExt for Pairings {
         config: pointer::Config,
         storage: pointer::Storage,
         event_emitter: pointer::EventEmitter,
-    ) -> BoxFuture<Result<tlv::Container, tlv::ErrorContainer>> {
+    ) -> BoxFuture<'_, Result<tlv::Container, tlv::ErrorContainer>> {
         async move {
             match handler {
                 HandlerType::Add {

@@ -3,15 +3,16 @@ use hyper::{Body, Response, StatusCode, Uri};
 use log::info;
 
 use crate::{
-    pointer,
+    Result, pointer,
     transport::http::{handler::JsonHandlerExt, json_response},
-    Result,
 };
 
 pub struct Accessories;
 
 impl Accessories {
-    pub fn new() -> Accessories { Accessories }
+    pub fn new() -> Accessories {
+        Accessories
+    }
 }
 
 impl JsonHandlerExt for Accessories {
@@ -25,7 +26,7 @@ impl JsonHandlerExt for Accessories {
         _: pointer::Storage,
         accessory_database: pointer::AccessoryDatabase,
         _: pointer::EventEmitter,
-    ) -> BoxFuture<Result<Response<Body>>> {
+    ) -> BoxFuture<'_, Result<Response<Body>>> {
         info!("received list accessories request");
         async move {
             let resp_body = accessory_database.lock().await.as_serialized_json().await?;

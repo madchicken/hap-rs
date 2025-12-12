@@ -3,16 +3,16 @@ use hyper::{Body, Response, StatusCode, Uri};
 use serde_json::json;
 
 use crate::{
-    pointer,
-    transport::http::{handler::JsonHandlerExt, json_response, status_response, Status},
-    HapType,
-    Result,
+    HapType, Result, pointer,
+    transport::http::{Status, handler::JsonHandlerExt, json_response, status_response},
 };
 
 pub struct Identify;
 
 impl Identify {
-    pub fn new() -> Identify { Identify }
+    pub fn new() -> Identify {
+        Identify
+    }
 }
 
 impl JsonHandlerExt for Identify {
@@ -26,7 +26,7 @@ impl JsonHandlerExt for Identify {
         storage: pointer::Storage,
         accessory_database: pointer::AccessoryDatabase,
         _: pointer::EventEmitter,
-    ) -> BoxFuture<Result<Response<Body>>> {
+    ) -> BoxFuture<'_, Result<Response<Body>>> {
         let storage = storage.clone();
         let accessory_database = accessory_database.clone();
 

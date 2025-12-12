@@ -1,18 +1,13 @@
-use aead::{generic_array::GenericArray, AeadInPlace, KeyInit};
+use aead::{AeadInPlace, KeyInit, generic_array::GenericArray};
 use chacha20poly1305::ChaCha20Poly1305;
 use ed25519_dalek::ed25519::signature::SignerMut;
 use futures::future::{BoxFuture, FutureExt};
-use hyper::{body::Buf, Body};
+use hyper::{Body, body::Buf};
 use log::{debug, info};
 use num::BigUint;
-use rand::{rngs::OsRng, RngCore};
-use sha2::{digest::Digest, Sha512};
-use srp::{
-    client::SrpClient,
-    groups::G_3072,
-    server::SrpServer,
-    types::SrpGroup,
-};
+use rand::{RngCore, rngs::OsRng};
+use sha2::{Sha512, digest::Digest};
+use srp::{client::SrpClient, groups::G_3072, server::SrpServer, types::SrpGroup};
 use std::{ops::BitXor, str};
 use uuid::Uuid;
 
@@ -68,7 +63,7 @@ impl TlvHandlerExt for PairSetup {
     type ParseResult = Step;
     type Result = tlv::Container;
 
-    fn parse(&self, body: Body) -> BoxFuture<Result<Step, tlv::ErrorContainer>> {
+    fn parse(&self, body: Body) -> BoxFuture<'_, Result<Step, tlv::ErrorContainer>> {
         async {
             let aggregated_body = hyper::body::aggregate(body)
                 .await
@@ -117,7 +112,7 @@ impl TlvHandlerExt for PairSetup {
         config: pointer::Config,
         storage: pointer::Storage,
         event_emitter: pointer::EventEmitter,
-    ) -> BoxFuture<Result<tlv::Container, tlv::ErrorContainer>> {
+    ) -> BoxFuture<'_, Result<tlv::Container, tlv::ErrorContainer>> {
         async move {
             match step {
                 Step::Start => match handle_start(self, config).await {
@@ -179,7 +174,6 @@ async fn handle_start(handler: &mut PairSetup, config: pointer::Config) -> Resul
     let mut b = [0; 64];
     csprng.fill_bytes(&mut salt);
     csprng.fill_bytes(&mut b);
-
 
     let srp_client = SrpClient::<Sha512>::new(&G_3072);
     let verifier = srp_client.compute_verifier(b"Pair-Setup", &config.lock().await.pin.to_string().as_bytes(), &salt);
@@ -467,10 +461,13 @@ mod tests {
 
         let b_proof = verify_client_proof::<Sha512>(&b_pub, &a_pub, &a_proof, &salt, &shared_secret, &G_3072).unwrap();
 
-        assert_eq!(b_proof, vec![
-            53, 222, 231, 209, 7, 123, 202, 208, 135, 119, 183, 90, 79, 154, 55, 155, 63, 56, 215, 210, 4, 20, 229,
-            119, 234, 168, 107, 137, 48, 172, 180, 244, 184, 142, 170, 120, 188, 106, 94, 135, 122, 4, 211, 21, 190,
-            26, 121, 180, 13, 192, 173, 246, 172, 223, 161, 192, 52, 251, 187, 66, 52, 170, 18, 85
-        ]);
+        assert_eq!(
+            b_proof,
+            vec![
+                53, 222, 231, 209, 7, 123, 202, 208, 135, 119, 183, 90, 79, 154, 55, 155, 63, 56, 215, 210, 4, 20, 229,
+                119, 234, 168, 107, 137, 48, 172, 180, 244, 184, 142, 170, 120, 188, 106, 94, 135, 122, 4, 211, 21,
+                190, 26, 121, 180, 13, 192, 173, 246, 172, 223, 161, 192, 52, 251, 187, 66, 52, 170, 18, 85
+            ]
+        );
     }
 }

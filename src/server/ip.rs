@@ -7,15 +7,14 @@ use log::{error, info};
 use std::sync::Arc;
 
 use crate::{
+    BonjourStatusFlag, Result,
     accessory::HapAccessory,
     config::Config,
     event::{Event, EventEmitter},
     pointer,
     server::Server,
-    storage::{accessory_database::AccessoryDatabase, Storage},
+    storage::{Storage, accessory_database::AccessoryDatabase},
     transport::{http::server::Server as HttpServer, mdns::MdnsResponder},
-    BonjourStatusFlag,
-    Result,
 };
 
 /// HAP Server via TCP/IP.
@@ -215,7 +214,7 @@ impl IpServer {
 
 #[async_trait]
 impl Server for IpServer {
-    fn run_handle(&self) -> BoxFuture<Result<()>> {
+    fn run_handle(&self) -> BoxFuture<'_, Result<()>> {
         let http_handle = self.http_server.run_handle();
         let mdns_responder = self.mdns_responder.clone();
 
@@ -231,9 +230,13 @@ impl Server for IpServer {
         Box::pin(handle)
     }
 
-    fn config_pointer(&self) -> pointer::Config { self.config.clone() }
+    fn config_pointer(&self) -> pointer::Config {
+        self.config.clone()
+    }
 
-    fn storage_pointer(&self) -> pointer::Storage { self.storage.clone() }
+    fn storage_pointer(&self) -> pointer::Storage {
+        self.storage.clone()
+    }
 
     async fn add_accessory<A: HapAccessory + 'static>(&self, accessory: A) -> Result<pointer::Accessory> {
         let aid = accessory.get_id();

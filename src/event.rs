@@ -1,4 +1,4 @@
-use futures::future::{join_all, BoxFuture};
+use futures::future::{BoxFuture, join_all};
 use log::debug;
 use serde_json::Value;
 use std::fmt::Debug;
@@ -13,13 +13,15 @@ pub enum Event {
 
 #[derive(Default)]
 pub struct EventEmitter {
-    listeners: Vec<Box<dyn (Fn(&Event) -> BoxFuture<()>) + Send + Sync>>,
+    listeners: Vec<Box<dyn (Fn(&Event) -> BoxFuture<'_, ()>) + Send + Sync>>,
 }
 
 impl EventEmitter {
-    pub fn new() -> EventEmitter { EventEmitter { listeners: vec![] } }
+    pub fn new() -> EventEmitter {
+        EventEmitter { listeners: vec![] }
+    }
 
-    pub fn add_listener(&mut self, listener: Box<dyn (Fn(&Event) -> BoxFuture<()>) + Send + Sync>) {
+    pub fn add_listener(&mut self, listener: Box<dyn (Fn(&Event) -> BoxFuture<'_, ()>) + Send + Sync>) {
         self.listeners.push(listener);
     }
 
