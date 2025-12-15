@@ -233,10 +233,10 @@ where
     pub async fn get_value(&mut self) -> Result<T> {
         let mut val = None;
         if let Some(ref mut on_read) = self.on_read {
-            val = on_read().map_err(|e| Error::ValueOnRead(e))?;
+            val = on_read().map_err(Error::ValueOnRead)?;
         }
         if let Some(ref mut on_read_async) = self.on_read_async {
-            val = on_read_async().await.map_err(|e| Error::ValueOnRead(e))?;
+            val = on_read_async().await.map_err(Error::ValueOnRead)?;
         }
         if let Some(v) = val {
             self.set_value(v).await?;
@@ -260,13 +260,15 @@ where
         // }
 
         let old_val = self.value.clone();
+        self.value = val.clone();
+
         if let Some(ref mut on_update) = self.on_update {
-            on_update(&old_val, &val).map_err(|e| Error::ValueOnUpdate(e))?;
+            on_update(&old_val, &val).map_err(Error::ValueOnUpdate)?;
         }
         if let Some(ref mut on_update_async) = self.on_update_async {
             on_update_async(old_val, val.clone())
                 .await
-                .map_err(|e| Error::ValueOnUpdate(e))?;
+                .map_err(Error::ValueOnUpdate)?;
         }
 
         if self.event_notifications == Some(true) {
@@ -282,8 +284,6 @@ where
                     .await;
             }
         }
-
-        self.value = val;
 
         Ok(())
     }

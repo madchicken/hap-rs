@@ -176,7 +176,7 @@ async fn handle_start(handler: &mut PairSetup, config: pointer::Config) -> Resul
     csprng.fill_bytes(&mut b);
 
     let srp_client = SrpClient::<Sha512>::new(&G_3072);
-    let verifier = srp_client.compute_verifier(b"Pair-Setup", &config.lock().await.pin.to_string().as_bytes(), &salt);
+    let verifier = srp_client.compute_verifier(b"Pair-Setup", config.lock().await.pin.to_string().as_bytes(), &salt);
 
     info!("pair setup M2: verifier: {:?}", verifier);
 
@@ -217,7 +217,7 @@ async fn handle_verify(handler: &mut PairSetup, a_pub: &[u8], a_proof: &[u8]) ->
             session.shared_secret = Some(shared_secret.to_vec());
 
             let b_proof =
-                verify_client_proof::<Sha512>(&session.b_pub, a_pub, a_proof, &session.salt, &shared_secret, &G_3072)?;
+                verify_client_proof::<Sha512>(&session.b_pub, a_pub, a_proof, &session.salt, shared_secret, &G_3072)?;
 
             info!("pair setup M4: sending SRP verify response");
 
@@ -369,11 +369,11 @@ fn verify_client_proof<D: Digest>(
     group: &SrpGroup,
 ) -> Result<Vec<u8>, tlv::Error> {
     let mut dhn = D::new();
-    dhn.update(&group.n.to_bytes_be());
+    dhn.update(group.n.to_bytes_be());
     let hn = BigUint::from_bytes_be(&dhn.finalize());
 
     let mut dhg = D::new();
-    dhg.update(&group.g.to_bytes_be());
+    dhg.update(group.g.to_bytes_be());
     let hg = BigUint::from_bytes_be(&dhg.finalize());
 
     let hng = hn.bitxor(hg);
@@ -384,7 +384,7 @@ fn verify_client_proof<D: Digest>(
 
     let mut d = D::new();
     // M = H(H(N) xor H(g), H(I), s, A, B, K)
-    d.update(&hng.to_bytes_be());
+    d.update(hng.to_bytes_be());
     d.update(&hi);
     d.update(salt);
     d.update(a_pub);

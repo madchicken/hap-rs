@@ -11,7 +11,7 @@ use std::{
 use tokio::task::spawn_blocking;
 use uuid::Uuid;
 
-use crate::{pairing::{Pairing, Permissions}, storage::Storage, Config, Error, Result};
+use crate::{Config, Error, Result, pairing::Pairing, storage::Storage};
 
 /// [`FileStorage`](FileStorage) is an implementor of the [`Storage`](Storage) trait that stores data to the file
 /// system.
@@ -29,9 +29,9 @@ impl FileStorage {
 
             let dir_path_str = dir_path.to_str().expect("couldn't stringify current_dir");
             // create subdirectory for pairings
-            fs::create_dir_all(&format!("{}/pairings", dir_path_str))?;
+            fs::create_dir_all(format!("{}/pairings", dir_path_str))?;
             // create subdirectory for custom byte storage
-            fs::create_dir_all(&format!("{}/misc", dir_path_str))?;
+            fs::create_dir_all(format!("{}/misc", dir_path_str))?;
 
             Ok(dir_path)
         })
@@ -157,7 +157,9 @@ impl Storage for FileStorage {
         self.write_bytes("config.json", config_bytes).await
     }
 
-    async fn delete_config(&mut self) -> Result<()> { self.remove_file("config.json").await }
+    async fn delete_config(&mut self) -> Result<()> {
+        self.remove_file("config.json").await
+    }
 
     async fn load_aid_cache(&self) -> Result<Vec<u64>> {
         let aid_cache_bytes = self.read_bytes("aid_cache.json").await?;
@@ -173,15 +175,13 @@ impl Storage for FileStorage {
         self.write_bytes("aid_cache.json", aid_cache_bytes).await
     }
 
-    async fn delete_aid_cache(&mut self) -> Result<()> { self.remove_file("aid_cache.json").await }
+    async fn delete_aid_cache(&mut self) -> Result<()> {
+        self.remove_file("aid_cache.json").await
+    }
 
     async fn load_pairing(&self, id: &Uuid) -> Result<Pairing> {
-        let key = format!("pairings/{}.json", id.to_string());
-        let pairing_bytes = match self.read_bytes(&key).await {
-            Ok(pairing) => pairing,
-            _ => self.read_bytes("pairings/admin.json").await?,
-        };
-
+        let key = format!("pairings/{id}.json");
+        let pairing_bytes = self.read_bytes(&key).await?;
         let pairing = Pairing::from_bytes(&pairing_bytes)?;
 
         debug!("loaded Pairing: {:?}", &pairing);
@@ -190,17 +190,13 @@ impl Storage for FileStorage {
     }
 
     async fn save_pairing(&mut self, pairing: &Pairing) -> Result<()> {
-        if pairing.permissions == Permissions::Admin {
-            let pairing_bytes = pairing.as_bytes()?;
-            self.write_bytes("pairings/admin.json", pairing_bytes).await?;
-        }
-        let key = format!("pairings/{}.json", pairing.id.to_string());
+        let key = format!("pairings/{}.json", pairing.id);
         let pairing_bytes = pairing.as_bytes()?;
         self.write_bytes(&key, pairing_bytes).await
     }
 
     async fn delete_pairing(&mut self, id: &Uuid) -> Result<()> {
-        let key = format!("pairings/{}.json", id.to_string());
+        let key = format!("pairings/{id}.json");
         self.remove_file(&key).await
     }
 
@@ -235,14 +231,16 @@ impl Storage for FileStorage {
         self.write_bytes(&format!("misc/{}", key), value.to_vec()).await
     }
 
-    async fn delete_bytes(&mut self, key: &str) -> Result<()> { self.remove_file(&format!("misc/{}", key)).await }
+    async fn delete_bytes(&mut self, key: &str) -> Result<()> {
+        self.remove_file(&format!("misc/{}", key)).await
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use crate::{pairing::Permissions, BonjourStatusFlag};
+    use crate::{BonjourStatusFlag, pairing::Permissions};
 
     /// Ensure we can write a [`Config`](Config), then a shorter one, without corrupting data.
     #[tokio::test]
