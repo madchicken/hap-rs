@@ -110,7 +110,7 @@ impl IpServer {
         }
         drop(s);
 
-        let mdns_responder = Arc::new(Mutex::new(MdnsResponder::new(config.clone()).await));
+        let mdns_responder = Arc::new(MdnsResponder::new(config.clone()).await);
         let mdns_responder_ = mdns_responder.clone();
 
         event_emitter.add_listener(Box::new(move |event| {
@@ -140,7 +140,7 @@ impl IpServer {
 
                                 drop(c);
 
-                                mdns_responder_.lock().await.update_records().await;
+                                mdns_responder_.update_records().await;
                             }
                         }
                     },
@@ -166,7 +166,7 @@ impl IpServer {
 
                                 drop(c);
 
-                                mdns_responder_.lock().await.update_records().await;
+                                mdns_responder_.update_records().await;
                             }
                         }
                     },
@@ -219,7 +219,7 @@ impl Server for IpServer {
         let mdns_responder = self.mdns_responder.clone();
 
         let handle = async move {
-            let mdns_handle = mdns_responder.lock().await.run_handle();
+            let mdns_handle = mdns_responder.run_handle();
 
             futures::try_join!(http_handle, mdns_handle.map(|_| Ok(())))?;
 
@@ -263,11 +263,7 @@ impl Server for IpServer {
     async fn remove_accessory(&self, accessory: &pointer::Accessory) -> Result<()> {
         let aid = accessory.lock().await.get_id();
 
-        self.accessory_database
-            .lock()
-            .await
-            .remove_accessory(&accessory)
-            .await?;
+        self.accessory_database.lock().await.remove_accessory(accessory).await?;
 
         let mut aid_cache = self.aid_cache.lock().await;
         if aid_cache.contains(&aid) {

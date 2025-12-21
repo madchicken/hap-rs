@@ -28,6 +28,6 @@ impl EventEmitter {
     pub async fn emit(&self, event: &Event) {
         debug!("emitting event: {:?}", event);
 
-        join_all(self.listeners.iter().map(|listener| listener(&event))).await;
+        join_all(self.listeners.iter().map(|listener| listener(event))).await;
     }
 }

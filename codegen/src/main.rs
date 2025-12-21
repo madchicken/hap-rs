@@ -1483,8 +1483,8 @@ fn main() {
             fs::remove_file(entry.path()).unwrap();
         }
     }
-    fs::create_dir_all(&service_base_path).unwrap();
-    fs::create_dir_all(&accessory_base_path).unwrap();
+    fs::create_dir_all(service_base_path).unwrap();
+    fs::create_dir_all(accessory_base_path).unwrap();
     let mut service_names = vec![];
     let mut accessory_names = vec![];
     for s in &metadata.sorted_services {

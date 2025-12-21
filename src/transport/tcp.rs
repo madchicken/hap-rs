@@ -1,14 +1,14 @@
-use aead::{generic_array::GenericArray, AeadInPlace, KeyInit};
+use aead::{AeadInPlace, KeyInit, generic_array::GenericArray};
 use byteorder::{ByteOrder, LittleEndian};
 use bytes::{Buf, BytesMut};
 use chacha20poly1305::{ChaCha20Poly1305, Nonce, Tag};
 use futures::{
+    Stream,
     channel::{
         mpsc::{self, UnboundedReceiver, UnboundedSender},
         oneshot,
     },
     io::Error,
-    Stream,
 };
 use log::{debug, error};
 use std::{
@@ -120,7 +120,7 @@ impl AsyncWrite for StreamWrapper {
         stream_wrapper
             .outgoing_sender
             .unbounded_send(buf.to_vec())
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, "couldn't write"))?;
+            .map_err(|_| std::io::Error::other("couldn't write"))?;
 
         if let Some(waker) = stream_wrapper
             .outgoing_waker
@@ -184,17 +184,17 @@ pub struct EncryptedStream {
     missing_data_for_encrypted_buf: bool,
 }
 
+type EncryptedBundle = (
+    EncryptedStream,
+    UnboundedReceiver<Vec<u8>>,
+    UnboundedSender<Vec<u8>>,
+    oneshot::Sender<Session>,
+    Arc<Mutex<Option<Waker>>>,
+    Arc<Mutex<Option<Waker>>>,
+);
+
 impl EncryptedStream {
-    pub fn new(
-        stream: TcpStream,
-    ) -> (
-        EncryptedStream,
-        UnboundedReceiver<Vec<u8>>,
-        UnboundedSender<Vec<u8>>,
-        oneshot::Sender<Session>,
-        Arc<Mutex<Option<Waker>>>,
-        Arc<Mutex<Option<Waker>>>,
-    ) {
+    pub fn new(stream: TcpStream) -> EncryptedBundle {
         let (sender, receiver) = oneshot::channel();
         let (incoming_sender, incoming_receiver) = mpsc::unbounded();
         let (outgoing_sender, outgoing_receiver) = mpsc::unbounded();
@@ -263,7 +263,7 @@ impl EncryptedStream {
                 &self.encrypted_buf[(self.packet_len - 14)..(self.packet_len + 2)],
                 &mut self.decrypt_count,
             )
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, "decryption failed"))?;
+            .map_err(|_| std::io::Error::other("decryption failed"))?;
 
             self.decrypted_buf.extend_from_slice(&decrypted);
 
@@ -386,14 +386,14 @@ impl EncryptedStream {
                 Poll::Ready(Ok(())) => {
                     let data_filled = data.filled();
 
-                    if data_filled.len() == 0 {
+                    if data_filled.is_empty() {
                         return Poll::Ready(Ok(()));
                     }
 
                     encrypted_stream
                         .incoming_sender
                         .unbounded_send(data_filled.to_vec())
-                        .map_err(|_| io::Error::new(io::ErrorKind::Other, "couldn't send incoming data"))?;
+                        .map_err(|_| std::io::Error::other("couldn't send incoming data"))?;
 
                     data.clear();
                 },
@@ -457,7 +457,7 @@ impl AsyncWrite for EncryptedStream {
             while write_buf.len() > 1024 {
                 let (aad, chunk, auth_tag) =
                     encrypt_chunk(&shared_secret, &write_buf[..1024], &mut encrypted_stream.encrypt_count)
-                        .map_err(|_| io::Error::new(io::ErrorKind::Other, "encryption failed"))?;
+                        .map_err(|_| std::io::Error::other("encryption failed"))?;
 
                 let data = [&aad[..], &chunk[..], &auth_tag[..]].concat();
                 AsyncWrite::poll_write(Pin::new(&mut encrypted_stream.stream), cx, &data)?;
@@ -466,7 +466,7 @@ impl AsyncWrite for EncryptedStream {
             }
 
             let (aad, chunk, auth_tag) = encrypt_chunk(&shared_secret, &write_buf, &mut encrypted_stream.encrypt_count)
-                .map_err(|_| io::Error::new(io::ErrorKind::Other, "encryption failed"))?;
+                .map_err(|_| std::io::Error::other("encryption failed"))?;
 
             let data = [&aad[..], &chunk[..], &auth_tag[..]].concat();
             AsyncWrite::poll_write(Pin::new(&mut encrypted_stream.stream), cx, &data)?;
@@ -505,7 +505,7 @@ fn decrypt_chunk(
 
     let mut buffer = Vec::new();
     buffer.extend_from_slice(data);
-    aead.decrypt_in_place_detached(Nonce::from_slice(&nonce), aad, &mut buffer, Tag::from_slice(&auth_tag))?;
+    aead.decrypt_in_place_detached(Nonce::from_slice(&nonce), aad, &mut buffer, Tag::from_slice(auth_tag))?;
 
     Ok(buffer)
 }

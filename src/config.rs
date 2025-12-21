@@ -1,11 +1,11 @@
 use ed25519_dalek::SigningKey as Ed25519Keypair;
 //use eui48::MacAddress;
 use macaddr::MacAddr6 as MacAddress;
-use rand::{rngs::OsRng, Rng};
+use rand::{Rng, rngs::OsRng};
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 
-use crate::{accessory::AccessoryCategory, BonjourFeatureFlag, BonjourStatusFlag, Pin};
+use crate::{BonjourFeatureFlag, BonjourStatusFlag, Pin, accessory::AccessoryCategory};
 
 /// The `Config` struct is used to store configuration options for the HomeKit Accessory Server.
 ///
@@ -22,7 +22,7 @@ use crate::{accessory::AccessoryCategory, BonjourFeatureFlag, BonjourStatusFlag,
 ///     ..Default::default()
 /// };
 /// ```
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     /// Socket IP address to serve on. Defaults to the IP of the system's first non-loopback network interface.
     pub host: IpAddr,
@@ -50,7 +50,6 @@ pub struct Config {
     /// Pairing Identifier. Must be a unique random number generated at every factory reset and must persist across
     /// reboots.
     pub device_id: MacAddress, // Bonjour: id
-    ///
     pub device_ed25519_keypair: Ed25519Keypair,
     /// Current configuration number. Is updated when an accessory, service, or characteristic is added or removed on
     /// the accessory server. Accessories must increment the config number after a firmware update.
@@ -72,20 +71,21 @@ pub struct Config {
 
 impl Config {
     /// Redetermines the `host` field to the IP of the system's first non-loopback network interface.
-    pub fn redetermine_local_ip(&mut self) { self.host = get_local_ip(); }
+    pub fn redetermine_local_ip(&mut self) {
+        self.host = get_local_ip();
+    }
 
     /// Derives mDNS TXT records from the `Config`.
-    pub(crate) fn txt_records(&self) -> [String; 8] {
-        [
-            format!("c#={}", self.configuration_number),
-            format!("ff={}", self.feature_flag as u8),
-            format!("id={}", self.device_id.to_string()),
-            format!("md={}", self.name),
-            format!("pv={}", self.protocol_version),
-            format!("s#={}", self.state_number),
-            format!("sf={}", self.status_flag as u8),
-            format!("ci={}", self.category as u8),
-            // format!("sh={}", self.setup_hash as u8), setup hash seems to be still undocumented
+    pub(crate) fn txt_records(&self) -> Vec<(String, String)> {
+        vec![
+            ("c#".to_string(), self.configuration_number.to_string()),
+            ("ff".to_string(), (self.feature_flag as u8).to_string()),
+            ("id".to_string(), self.device_id.to_string()),
+            ("md".to_string(), self.name.to_string()),
+            ("pv".to_string(), self.protocol_version.to_string()),
+            ("s#".to_string(), self.state_number.to_string()),
+            ("sf".to_string(), (self.status_flag as u8).to_string()),
+            ("ci".to_string(), (self.category as u8).to_string()),
         ]
     }
 }

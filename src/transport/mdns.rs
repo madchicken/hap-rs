@@ -1,61 +1,81 @@
-use libmdns::{Responder, Service};
-use log::debug;
+use log::info;
+use mdns_sd::{Receiver, ServiceDaemon, ServiceEvent, ServiceInfo};
+use tokio::task::JoinHandle;
 
 use crate::pointer;
 
 /// An mDNS Responder. Used to announce the Accessory's name and HAP TXT records to potential controllers.
 pub struct MdnsResponder {
-    config: pointer::Config,
-    responder: Responder,
-    service: Option<Service>,
-    task: Option<Box<dyn futures::Future<Output = ()> + Unpin + std::marker::Send>>,
+    mdns: ServiceDaemon,
+    receiver: Receiver<ServiceEvent>,
+    service_info: ServiceInfo,
+    service_fullname: String,
 }
 
 impl MdnsResponder {
     /// Creates a new mDNS Responder.
     pub async fn new(config: pointer::Config) -> Self {
-        let (responder, task) = libmdns::Responder::with_default_handle().expect("creating mDNS responder");
+        let mdns = ServiceDaemon::new().expect("Failed to create daemon");
+        let receiver = mdns.browse("_hap._tcp.local.").unwrap();
+
+        let config = config.lock().await;
+        let name = config.name.clone();
+        let port = config.port;
+        let tr = config.txt_records();
+        let host_name = format!("{}.local.", config.host);
+        drop(config);
+
+        let service_info = ServiceInfo::new("_hap._tcp.local.", &name, &host_name, "", port, tr.as_slice())
+            .expect("valid service info")
+            .enable_addr_auto();
+        let service_fullname = service_info.get_fullname().to_string();
 
         MdnsResponder {
-            config,
-            responder,
-            service: None,
-            task: Some(task),
+            mdns,
+            receiver,
+            service_info,
+            service_fullname,
         }
     }
 
     /// Derives new mDNS TXT records from the server's `Config`.
-    pub async fn update_records(&mut self) {
-        debug!("attempting to set mDNS records");
+    pub async fn update_records(&self) {
+        info!("attempting to set mDNS records");
 
-        self.service = None;
+        self.mdns
+            .register(self.service_info.clone())
+            .expect("Failed to register mDNS service");
 
-        let c = self.config.lock().await;
-
-        let name = c.name.clone();
-        let port = c.port;
-        let tr = c.txt_records();
-
-        drop(c);
-
-        self.service = Some(self.responder.register("_hap._tcp".into(), &name, port, &[
-            &tr[0], &tr[1], &tr[2], &tr[3], &tr[4], &tr[5], &tr[6], &tr[7],
-        ]));
-
-        debug!("setting mDNS records: {:?}", &tr);
+        info!("setting mDNS records: {:?}", self.service_info.get_properties());
     }
 
     /// Returns the mDNS task to throw on a scheduler.
-    pub fn run_handle(&mut self) -> Box<dyn futures::Future<Output = ()> + Unpin + std::marker::Send> {
-        match self.task.take() {
-            Some(task) => task,
-            // if the task handle is gone, recreate the whole responder
-            None => {
-                let (responder, task) = libmdns::Responder::with_default_handle().expect("creating mDNS responder");
-                self.responder = responder;
+    pub async fn run_handle(&self) -> JoinHandle<()> {
+        let receiver = self.receiver.clone();
+        tokio::spawn(async move {
+            while let Ok(event) = receiver.recv() {
+                match event {
+                    ServiceEvent::ServiceResolved(info) => {
+                        info!("Found HAP service: {}", info.fullname);
+                    },
+                    ServiceEvent::ServiceRemoved(service_type, fullname) => {
+                        info!("Removed HAP service: {}, {}", service_type, fullname);
+                        break;
+                    },
+                    _ => {},
+                }
+            }
+        })
+    }
 
-                task
-            },
-        }
+    /// Stops the mDNS service.
+    pub fn stop(&self) -> Result<Receiver<mdns_sd::UnregisterStatus>, mdns_sd::Error> {
+        self.mdns.unregister(&self.service_fullname)
+    }
+}
+
+impl Drop for MdnsResponder {
+    fn drop(&mut self) {
+        let _ = self.stop();
     }
 }

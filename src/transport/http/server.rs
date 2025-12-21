@@ -185,7 +185,7 @@ impl Server {
             info!("binding TCP listener on {}", &socket_addr);
             let listener = TcpListener::bind(socket_addr).await?;
 
-            mdns_responder.lock().await.update_records().await;
+            mdns_responder.update_records().await;
 
             loop {
                 let (stream, _socket_addr) = listener.accept().await?;
@@ -207,7 +207,7 @@ impl Server {
                 let api = Api::new(
                     encrypted_stream.controller_id.clone(),
                     event_subscriptions.clone(),
-                    config.clone(),
+                    self.config.clone(),
                     storage.clone(),
                     accessory_database.clone(),
                     event_emitter.clone(),
