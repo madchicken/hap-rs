@@ -1,5 +1,3 @@
-use tokio;
-
 use hap::{
     Config, MacAddress, Pin, Result,
     accessory::{AccessoryCategory, AccessoryInformation, bridge::BridgeAccessory, lightbulb::LightbulbAccessory},

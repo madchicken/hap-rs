@@ -3,13 +3,12 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    service::HapService,
-    characteristic::{
-        HapCharacteristic,
-		access_control_level::AccessControlLevelCharacteristic,
-		password_setting::PasswordSettingCharacteristic,
-	},
     HapType,
+    characteristic::{
+        HapCharacteristic, access_control_level::AccessControlLevelCharacteristic,
+        password_setting::PasswordSettingCharacteristic,
+    },
+    service::HapService,
 };
 
 /// Access Control service.
@@ -26,22 +25,23 @@ pub struct AccessControlService {
     /// An array of numbers containing the instance IDs of the services that this service links to.
     linked_services: Vec<u64>,
 
-	/// Access Control Level characteristic (required).
-	pub access_control_level: AccessControlLevelCharacteristic,
+    /// Access Control Level characteristic (required).
+    pub access_control_level: AccessControlLevelCharacteristic,
 
-	/// Password Setting characteristic (optional).
-	pub password_setting: Option<PasswordSettingCharacteristic>,
+    /// Password Setting characteristic (optional).
+    pub password_setting: Option<PasswordSettingCharacteristic>,
 }
 
 impl AccessControlService {
     /// Creates a new Access Control service.
+    #[allow(clippy::identity_op)]
     pub fn new(id: u64, accessory_id: u64) -> Self {
         Self {
             id,
             hap_type: HapType::AccessControl,
-			access_control_level: AccessControlLevelCharacteristic::new(id + 1 + 0, accessory_id),
-			password_setting: Some(PasswordSettingCharacteristic::new(id + 1 + 0 + 1, accessory_id)),
-			..Default::default()
+            access_control_level: AccessControlLevelCharacteristic::new(id + 1 + 0, accessory_id),
+            password_setting: Some(PasswordSettingCharacteristic::new(id + 1 + 0 + 1, accessory_id)),
+            ..Default::default()
         }
     }
 }
@@ -88,43 +88,35 @@ impl HapService for AccessControlService {
     }
 
     fn get_characteristic(&self, hap_type: HapType) -> Option<&dyn HapCharacteristic> {
-        for characteristic in self.get_characteristics() {
-            if characteristic.get_type() == hap_type {
-                return Some(characteristic);
-            }
-        }
-        None
+        self.get_characteristics()
+            .into_iter()
+            .find(|&characteristic| characteristic.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_mut_characteristic(&mut self, hap_type: HapType) -> Option<&mut dyn HapCharacteristic> {
-        for characteristic in self.get_mut_characteristics() {
-            if characteristic.get_type() == hap_type {
-                return Some(characteristic);
-            }
-        }
-        None
+        self.get_mut_characteristics()
+            .into_iter()
+            .find(|characteristic| characteristic.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_characteristics(&self) -> Vec<&dyn HapCharacteristic> {
         #[allow(unused_mut)]
-        let mut characteristics: Vec<&dyn HapCharacteristic> = vec![
-			&self.access_control_level,
-		];
-		if let Some(c) = &self.password_setting {
-		    characteristics.push(c);
-		}
-		characteristics
+        let mut characteristics: Vec<&dyn HapCharacteristic> = vec![&self.access_control_level];
+        if let Some(c) = &self.password_setting {
+            characteristics.push(c);
+        }
+        characteristics
     }
 
     fn get_mut_characteristics(&mut self) -> Vec<&mut dyn HapCharacteristic> {
         #[allow(unused_mut)]
-        let mut characteristics: Vec<&mut dyn HapCharacteristic> = vec![
-			&mut self.access_control_level,
-		];
-		if let Some(c) = &mut self.password_setting {
-		    characteristics.push(c);
-		}
-		characteristics
+        let mut characteristics: Vec<&mut dyn HapCharacteristic> = vec![&mut self.access_control_level];
+        if let Some(c) = &mut self.password_setting {
+            characteristics.push(c);
+        }
+        characteristics
     }
 }
 

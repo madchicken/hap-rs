@@ -1,5 +1,5 @@
 use log::info;
-use mdns_sd::{Receiver, ServiceDaemon, ServiceEvent, ServiceInfo};
+use mdns_sd::{IfKind, Receiver, ServiceDaemon, ServiceEvent, ServiceInfo};
 use tokio::task::JoinHandle;
 
 use crate::pointer;
@@ -16,6 +16,7 @@ impl MdnsResponder {
     /// Creates a new mDNS Responder.
     pub async fn new(config: pointer::Config) -> Self {
         let mdns = ServiceDaemon::new().expect("Failed to create daemon");
+        mdns.disable_interface(IfKind::IPv6).unwrap();
         let receiver = mdns.browse("_hap._tcp.local.").unwrap();
 
         let config = config.lock().await;

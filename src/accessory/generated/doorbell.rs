@@ -5,24 +5,22 @@ use serde::ser::{Serialize, SerializeStruct, Serializer};
 use crate::{
     HapType, Result,
     accessory::{AccessoryInformation, HapAccessory},
-    service::{
-        HapService, accessory_information::AccessoryInformationService, stateless_programmable_switch::DoorbellService,
-    },
+    service::{HapService, accessory_information::AccessoryInformationService, doorbell::DoorbellService},
 };
 
 /// Stateless Programmable Switch accessory.
 #[derive(Debug, Default)]
-pub struct StatelessProgrammableSwitchAccessory {
+pub struct DoorbellAccessory {
     /// ID of the Stateless Programmable Switch accessory.
     id: u64,
 
     /// Accessory Information service.
     pub accessory_information: AccessoryInformationService,
-    /// Stateless Programmable Switch service.
-    pub stateless_programmable_switch: DoorbellService,
+    /// Doorbell service.
+    pub doorbell: DoorbellService,
 }
 
-impl StatelessProgrammableSwitchAccessory {
+impl DoorbellAccessory {
     /// Creates a new Stateless Programmable Switch accessory.
     pub fn new(id: u64, information: AccessoryInformation) -> Result<Self> {
         let accessory_information = information.to_service(1, id)?;
@@ -33,12 +31,12 @@ impl StatelessProgrammableSwitchAccessory {
         Ok(Self {
             id,
             accessory_information,
-            stateless_programmable_switch,
+            doorbell: stateless_programmable_switch,
         })
     }
 }
 
-impl HapAccessory for StatelessProgrammableSwitchAccessory {
+impl HapAccessory for DoorbellAccessory {
     fn get_id(&self) -> u64 {
         self.id
     }
@@ -62,15 +60,15 @@ impl HapAccessory for StatelessProgrammableSwitchAccessory {
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {
-        vec![&self.accessory_information, &self.stateless_programmable_switch]
+        vec![&self.accessory_information, &self.doorbell]
     }
 
     fn get_mut_services(&mut self) -> Vec<&mut dyn HapService> {
-        vec![&mut self.accessory_information, &mut self.stateless_programmable_switch]
+        vec![&mut self.accessory_information, &mut self.doorbell]
     }
 }
 
-impl Serialize for StatelessProgrammableSwitchAccessory {
+impl Serialize for DoorbellAccessory {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
         let mut state = serializer.serialize_struct("HapAccessory", 2)?;
         state.serialize_field("aid", &self.get_id())?;

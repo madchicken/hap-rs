@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{Error, Result};
@@ -71,9 +73,9 @@ impl Pin {
     // }
 }
 
-impl ToString for Pin {
-    fn to_string(&self) -> String {
-        format!(
+impl Display for Pin {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let pin_str = format!(
             "{}{}{}-{}{}-{}{}{}",
             &self.pin[0],
             &self.pin[1],
@@ -83,7 +85,8 @@ impl ToString for Pin {
             &self.pin[5],
             &self.pin[6],
             &self.pin[7],
-        )
+        );
+        write!(f, "{}", pin_str)
     }
 }
 

@@ -124,6 +124,7 @@ pub enum Value {
 
 impl Value {
     /// Converts a variant of `Value` to a `(u8, Vec<u8>)` tuple in the format `(Type, Value)`.
+    #[allow(clippy::wrong_self_convention)]
     pub fn as_tlv(self) -> (u8, Vec<u8>) {
         match self {
             Value::Method(method) => (Type::Method as u8, vec![method as u8]),
@@ -257,7 +258,9 @@ impl From<ed25519_dalek::SignatureError> for Error {
 pub type Container = Vec<Value>;
 
 impl Encodable for Container {
-    fn encode(self) -> Vec<u8> { encode(self.into_iter().map(|v| v.as_tlv()).collect::<Vec<_>>()) }
+    fn encode(self) -> Vec<u8> {
+        encode(self.into_iter().map(|v| v.as_tlv()).collect::<Vec<_>>())
+    }
 }
 
 pub struct ErrorContainer {
@@ -266,9 +269,13 @@ pub struct ErrorContainer {
 }
 
 impl ErrorContainer {
-    pub fn new(step: u8, error: Error) -> ErrorContainer { ErrorContainer { step, error } }
+    pub fn new(step: u8, error: Error) -> ErrorContainer {
+        ErrorContainer { step, error }
+    }
 }
 
 impl Encodable for ErrorContainer {
-    fn encode(self) -> Vec<u8> { vec![Value::State(self.step), Value::Error(self.error)].encode() }
+    fn encode(self) -> Vec<u8> {
+        vec![Value::State(self.step), Value::Error(self.error)].encode()
+    }
 }

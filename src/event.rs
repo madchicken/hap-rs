@@ -11,9 +11,11 @@ pub enum Event {
     CharacteristicValueChanged { aid: u64, iid: u64, value: Value },
 }
 
+type Listener = Box<dyn Fn(&Event) -> BoxFuture<'_, ()> + Send + Sync>;
+
 #[derive(Default)]
 pub struct EventEmitter {
-    listeners: Vec<Box<dyn (Fn(&Event) -> BoxFuture<'_, ()>) + Send + Sync>>,
+    listeners: Vec<Listener>,
 }
 
 impl EventEmitter {
@@ -21,7 +23,7 @@ impl EventEmitter {
         EventEmitter { listeners: vec![] }
     }
 
-    pub fn add_listener(&mut self, listener: Box<dyn (Fn(&Event) -> BoxFuture<'_, ()>) + Send + Sync>) {
+    pub fn add_listener(&mut self, listener: Listener) {
         self.listeners.push(listener);
     }
 

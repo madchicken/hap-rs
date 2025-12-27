@@ -1554,11 +1554,11 @@ fn main() {
     let service_mod = handlebars
         .render("service_mod", &json!({ "services": service_names }))
         .unwrap();
-    let mut service_mod_file = File::create(&format!("{}mod.rs", service_base_path)).unwrap();
+    let mut service_mod_file = File::create(format!("{}mod.rs", service_base_path)).unwrap();
     service_mod_file.write_all(service_mod.as_bytes()).unwrap();
     let accessory_mod = handlebars
         .render("accessory_mod", &json!({ "accessories": accessory_names }))
         .unwrap();
-    let mut accessory_mod_file = File::create(&format!("{}mod.rs", accessory_base_path)).unwrap();
+    let mut accessory_mod_file = File::create(format!("{}mod.rs", accessory_base_path)).unwrap();
     accessory_mod_file.write_all(accessory_mod.as_bytes()).unwrap();
 }

@@ -6,8 +6,9 @@ use futures::{
 use hyper::{Body, Method, Request, Response, StatusCode, server::conn::Http, service::Service};
 use log::{debug, error, info};
 use std::{
-    net::SocketAddr,
+    net::{IpAddr, SocketAddr},
     pin::Pin,
+    str::FromStr,
     sync::Arc,
     task::{Context, Poll},
 };
@@ -179,7 +180,7 @@ impl Server {
 
         async move {
             let config_lock = config.lock().await;
-            let socket_addr = SocketAddr::new(config_lock.host, config_lock.port);
+            let socket_addr = SocketAddr::new(IpAddr::from_str("0.0.0.0").unwrap(), config_lock.port);
             drop(config_lock);
 
             info!("binding TCP listener on {}", &socket_addr);
