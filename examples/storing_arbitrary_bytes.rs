@@ -3,15 +3,12 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use hap::{
-    accessory::{lightbulb::LightbulbAccessory, AccessoryCategory, AccessoryInformation},
+    Config, MacAddress, Pin, Result,
+    accessory::{AccessoryCategory, AccessoryInformation, lightbulb::LightbulbAccessory},
     characteristic::AsyncCharacteristicCallbacks,
     futures::future::FutureExt,
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
-    Config,
-    MacAddress,
-    Pin,
-    Result,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,10 +18,13 @@ struct LightbulbState {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut lightbulb = LightbulbAccessory::new(1, AccessoryInformation {
-        name: "Acme Stateful Lightbulb".into(),
-        ..Default::default()
-    })?;
+    let mut lightbulb = LightbulbAccessory::new(
+        1,
+        AccessoryInformation {
+            name: "Acme Stateful Lightbulb".into(),
+            ..Default::default()
+        },
+    )?;
 
     let mut storage = FileStorage::current_dir().await?;
 
@@ -48,10 +48,7 @@ async fn main() -> Result<()> {
     };
 
     let state = Arc::new(Mutex::new(match storage.load_bytes("state.json").await {
-        Ok(state_bytes) => {
-            let state = serde_json::from_slice(&state_bytes)?;
-            state
-        },
+        Ok(state_bytes) => serde_json::from_slice(&state_bytes)?,
         Err(_) => {
             let state = LightbulbState { power_state: false };
             let state_bytes = serde_json::to_vec(&state)?;

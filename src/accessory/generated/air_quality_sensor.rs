@@ -3,10 +3,11 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-	accessory::{AccessoryInformation, HapAccessory},
-	service::{HapService, accessory_information::AccessoryInformationService, air_quality_sensor::AirQualitySensorService},
-	HapType,
-	Result,
+    HapType, Result,
+    accessory::{AccessoryInformation, HapAccessory},
+    service::{
+        HapService, accessory_information::AccessoryInformationService, air_quality_sensor::AirQualitySensorService,
+    },
 };
 
 /// Air Quality Sensor accessory.
@@ -47,35 +48,25 @@ impl HapAccessory for AirQualitySensorAccessory {
     }
 
     fn get_service(&self, hap_type: HapType) -> Option<&dyn HapService> {
-        for service in self.get_services() {
-            if service.get_type() == hap_type {
-                return Some(service);
-            }
-        }
-        None
+        self.get_services()
+            .into_iter()
+            .find(|&service| service.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_mut_service(&mut self, hap_type: HapType) -> Option<&mut dyn HapService> {
-        for service in self.get_mut_services() {
-            if service.get_type() == hap_type {
-                return Some(service);
-            }
-        }
-        None
+        self.get_mut_services()
+            .into_iter()
+            .find(|service| service.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {
-        vec![
-            &self.accessory_information,
-            &self.air_quality_sensor,
-        ]
+        vec![&self.accessory_information, &self.air_quality_sensor]
     }
 
     fn get_mut_services(&mut self) -> Vec<&mut dyn HapService> {
-        vec![
-            &mut self.accessory_information,
-            &mut self.air_quality_sensor,
-        ]
+        vec![&mut self.accessory_information, &mut self.air_quality_sensor]
     }
 }
 

@@ -1,23 +1,20 @@
-use tokio;
-
 use hap::{
-    accessory::{motion_sensor::MotionSensorAccessory, AccessoryCategory, AccessoryInformation},
+    Config, HapType, MacAddress, Pin, Result,
+    accessory::{AccessoryCategory, AccessoryInformation, motion_sensor::MotionSensorAccessory},
     serde_json::Value,
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
-    Config,
-    HapType,
-    MacAddress,
-    Pin,
-    Result,
 };
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let sensor = MotionSensorAccessory::new(1, AccessoryInformation {
-        name: "Acme Sensor".into(),
-        ..Default::default()
-    })?;
+    let sensor = MotionSensorAccessory::new(
+        1,
+        AccessoryInformation {
+            name: "Acme Sensor".into(),
+            ..Default::default()
+        },
+    )?;
 
     let mut storage = FileStorage::current_dir().await?;
 

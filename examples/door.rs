@@ -1,21 +1,19 @@
-use tokio;
-
 use hap::{
-    accessory::{door::DoorAccessory, AccessoryCategory, AccessoryInformation},
+    Config, MacAddress, Pin, Result,
+    accessory::{AccessoryCategory, AccessoryInformation, door::DoorAccessory},
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
-    Config,
-    MacAddress,
-    Pin,
-    Result,
 };
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let door = DoorAccessory::new(1, AccessoryInformation {
-        name: "Acme Door".into(),
-        ..Default::default()
-    })?;
+    let door = DoorAccessory::new(
+        1,
+        AccessoryInformation {
+            name: "Acme Door".into(),
+            ..Default::default()
+        },
+    )?;
 
     let mut storage = FileStorage::current_dir().await?;
 

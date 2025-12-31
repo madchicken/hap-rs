@@ -12,8 +12,6 @@ pub mod carbon_monoxide_sensor;
 pub mod contact_sensor;
 /// Door accessory definition.
 pub mod door;
-/// Doorbell accessory definition.
-pub mod doorbell;
 /// Fan accessory definition.
 pub mod fan;
 /// Fan v2 accessory definition.

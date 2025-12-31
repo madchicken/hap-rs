@@ -1,14 +1,14 @@
 [package]
 name = "hap"
-version = "0.1.0-pre.15"
-authors = ["Elias Wilken <elias@wlkn.io>"]
+version = "0.1.0-pre.16"
+authors = ["Elias Wilken <elias@wlkn.io>", "Pierpaolo Follia <pfollia@gmail.com>"]
 edition = "2021"
 description = "Rust implementation of the Apple HomeKit Accessory Protocol (HAP)"
 documentation = "https://docs.rs/hap"
 readme = "README.md"
-repository = "https://github.com/ewilken/hap-rs"
+repository = "https://github.com/madchicken/hap-rs"
 license = "MIT/Apache-2.0"
-keywords = ["apple", "homekit"]
+keywords = ["apple", "homekit", "hap"]
 exclude = [
     ".github",
     ".gitignore",

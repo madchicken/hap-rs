@@ -20,13 +20,21 @@ impl MdnsResponder {
         let receiver = mdns.browse("_hap._tcp.local.").unwrap();
 
         let config = config.lock().await;
-        let name = config.name.clone();
+        let name = config.name.replace(" ", "-");
         let port = config.port;
+        let id = config.device_id.into_array()[4..6]
+            .to_vec()
+            .iter()
+            .map(|x| format!("{:02x}", x))
+            .collect::<Vec<String>>()
+            .join("")
+            .to_uppercase();
         let tr = config.txt_records();
-        let host_name = format!("{}.local.", config.host);
+        let host_name = format!("{}_{}.local.", name.to_lowercase(), id);
+        let instance_name = format!("{} {}", config.name, id);
         drop(config);
 
-        let service_info = ServiceInfo::new("_hap._tcp.local.", &name, &host_name, "", port, tr.as_slice())
+        let service_info = ServiceInfo::new("_hap._tcp.local.", &instance_name, &host_name, "", port, tr.as_slice())
             .expect("valid service info")
             .enable_addr_auto();
         let service_fullname = service_info.get_fullname().to_string();
@@ -41,13 +49,17 @@ impl MdnsResponder {
 
     /// Derives new mDNS TXT records from the server's `Config`.
     pub async fn update_records(&self) {
-        info!("attempting to set mDNS records");
-
+        info!("Unsetting mDNS records");
+        let _ = self.mdns.unregister(&self.service_fullname);
+        info!("Attempting to set a new mDNS records");
         self.mdns
             .register(self.service_info.clone())
             .expect("Failed to register mDNS service");
 
-        info!("setting mDNS records: {:?}", self.service_info.get_properties());
+        info!(
+            "Successfully set mDNS records: {:?}",
+            self.service_info.get_properties()
+        );
     }
 
     /// Returns the mDNS task to throw on a scheduler.

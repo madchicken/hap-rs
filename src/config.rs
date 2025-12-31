@@ -123,7 +123,7 @@ impl Default for Config {
             status_flag: BonjourStatusFlag::NotPaired,
             feature_flag: BonjourFeatureFlag::Zero,
             max_peers: None,
-            setup_id: None,
+            setup_id: Some(generate_setup_id()),
         }
     }
 }
@@ -207,18 +207,28 @@ fn base36_encode(mut num: u64) -> String {
 }
 
 pub fn compute_sh(setup_id: &str, accessory_id: &str) -> String {
-    // Concatenazione esatta: SetupID + AccessoryID
-    let input = format!("{}{}", setup_id, accessory_id);
+    // SetupID + AccessoryID
+    let input = format!("{}{}", setup_id, accessory_id.to_uppercase());
     debug!("Calculating sh for input {input}");
-
-    // SHA-512
+    // 1. SHA-512
     let hash = Sha512::digest(input.as_bytes());
+    // 2. Primi 4 byte
+    let first4 = &hash[..4];
+    // 3. Base64 standard (url-safe)
+    base64::prelude::BASE64_URL_SAFE.encode(first4)
+}
 
-    // Base64 standard (NON url-safe)
-    let b64 = base64::prelude::BASE64_STANDARD.encode(hash);
-
-    // Primi 4 caratteri
-    b64[..4].to_string()
+fn generate_setup_id() -> String {
+    let mut rng = rand::thread_rng();
+    let chars = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
+        'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    ];
+    let mut id = String::new();
+    for _ in 0..4 {
+        id.push(chars[rng.gen_range(0..chars.len())]);
+    }
+    id
 }
 
 #[cfg(test)]
@@ -248,6 +258,6 @@ mod tests {
         let accessory_id = "00:25:29:17:01:EC";
 
         let sh = super::compute_sh(setup_id, accessory_id);
-        assert_eq!("d/fB", sh); // deve stampare: d/fB
+        assert_eq!("d_fBuw==", sh); // deve stampare: d/fB
     }
 }

@@ -1,24 +1,17 @@
 use serde::{
-    ser::{SerializeStruct, Serializer},
     Serialize,
+    ser::{SerializeStruct, Serializer},
 };
-use tokio;
 
 use hap::{
+    Config, HapType, MacAddress, Pin, Result,
     accessory::{AccessoryCategory, AccessoryInformation, HapAccessory},
     server::{IpServer, Server},
     service::{
-        accessory_information::AccessoryInformationService,
-        humidity_sensor::HumiditySensorService,
+        HapService, accessory_information::AccessoryInformationService, humidity_sensor::HumiditySensorService,
         temperature_sensor::TemperatureSensorService,
-        HapService,
     },
     storage::{FileStorage, Storage},
-    Config,
-    HapType,
-    MacAddress,
-    Pin,
-    Result,
 };
 
 /// Multi Sensor accessory.
@@ -36,26 +29,26 @@ pub struct MultiSensorAccessory {
 }
 
 impl HapAccessory for MultiSensorAccessory {
-    fn get_id(&self) -> u64 { self.id }
+    fn get_id(&self) -> u64 {
+        self.id
+    }
 
-    fn set_id(&mut self, id: u64) { self.id = id; }
+    fn set_id(&mut self, id: u64) {
+        self.id = id;
+    }
 
     fn get_service(&self, hap_type: HapType) -> Option<&dyn HapService> {
-        for service in self.get_services() {
-            if service.get_type() == hap_type {
-                return Some(service);
-            }
-        }
-        None
+        self.get_services()
+            .into_iter()
+            .find(|&service| service.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_mut_service(&mut self, hap_type: HapType) -> Option<&mut dyn HapService> {
-        for service in self.get_mut_services() {
-            if service.get_type() == hap_type {
-                return Some(service);
-            }
-        }
-        None
+        self.get_mut_services()
+            .into_iter()
+            .find(|service| service.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {

@@ -3,12 +3,9 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    service::HapService,
-    characteristic::{
-        HapCharacteristic,
-		active::ActiveCharacteristic,
-	},
     HapType,
+    characteristic::{HapCharacteristic, active::ActiveCharacteristic},
+    service::HapService,
 };
 
 /// Accessory Metrics service.
@@ -25,9 +22,8 @@ pub struct AccessoryMetricsService {
     /// An array of numbers containing the instance IDs of the services that this service links to.
     linked_services: Vec<u64>,
 
-	/// Active characteristic (required).
-	pub active: ActiveCharacteristic,
-
+    /// Active characteristic (required).
+    pub active: ActiveCharacteristic,
 }
 
 impl AccessoryMetricsService {
@@ -36,8 +32,8 @@ impl AccessoryMetricsService {
         Self {
             id,
             hap_type: HapType::AccessoryMetrics,
-			active: ActiveCharacteristic::new(id + 1 + 0, accessory_id),
-			..Default::default()
+            active: ActiveCharacteristic::new(id + 1 + 0, accessory_id),
+            ..Default::default()
         }
     }
 }
@@ -84,37 +80,29 @@ impl HapService for AccessoryMetricsService {
     }
 
     fn get_characteristic(&self, hap_type: HapType) -> Option<&dyn HapCharacteristic> {
-        for characteristic in self.get_characteristics() {
-            if characteristic.get_type() == hap_type {
-                return Some(characteristic);
-            }
-        }
-        None
+        self.get_characteristics()
+            .into_iter()
+            .find(|&characteristic| characteristic.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_mut_characteristic(&mut self, hap_type: HapType) -> Option<&mut dyn HapCharacteristic> {
-        for characteristic in self.get_mut_characteristics() {
-            if characteristic.get_type() == hap_type {
-                return Some(characteristic);
-            }
-        }
-        None
+        self.get_mut_characteristics()
+            .into_iter()
+            .find(|characteristic| characteristic.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_characteristics(&self) -> Vec<&dyn HapCharacteristic> {
         #[allow(unused_mut)]
-        let mut characteristics: Vec<&dyn HapCharacteristic> = vec![
-			&self.active,
-		];
-		characteristics
+        let mut characteristics: Vec<&dyn HapCharacteristic> = vec![&self.active];
+        characteristics
     }
 
     fn get_mut_characteristics(&mut self) -> Vec<&mut dyn HapCharacteristic> {
         #[allow(unused_mut)]
-        let mut characteristics: Vec<&mut dyn HapCharacteristic> = vec![
-			&mut self.active,
-		];
-		characteristics
+        let mut characteristics: Vec<&mut dyn HapCharacteristic> = vec![&mut self.active];
+        characteristics
     }
 }
 
