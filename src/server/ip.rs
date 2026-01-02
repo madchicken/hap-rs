@@ -110,7 +110,7 @@ impl IpServer {
         }
         drop(s);
 
-        let mdns_responder = Arc::new(MdnsResponder::new(config.clone()).await);
+        let mdns_responder = Arc::new(MdnsResponder::new().await);
         let mdns_responder_ = mdns_responder.clone();
 
         event_emitter.add_listener(Box::new(move |event| {
@@ -138,9 +138,7 @@ impl IpServer {
                                     .map_err(|e| error!("error saving the config: {:?}", e))
                                     .ok();
 
-                                drop(c);
-
-                                mdns_responder_.update_records().await;
+                                mdns_responder_.update_records(c.clone()).await;
                             }
                         }
                     },
@@ -164,9 +162,7 @@ impl IpServer {
                                     .map_err(|e| error!("error saving the config: {:?}", e))
                                     .ok();
 
-                                drop(c);
-
-                                mdns_responder_.update_records().await;
+                                mdns_responder_.update_records(c.clone()).await;
                             }
                         }
                     },

@@ -181,12 +181,12 @@ impl Server {
         async move {
             let config_lock = config.lock().await;
             let socket_addr = SocketAddr::new(IpAddr::from_str("0.0.0.0").unwrap(), config_lock.port);
-            drop(config_lock);
 
             info!("binding TCP listener on {}", &socket_addr);
             let listener = TcpListener::bind(socket_addr).await?;
 
-            mdns_responder.update_records().await;
+            mdns_responder.update_records(config_lock.clone()).await;
+            drop(config_lock);
 
             loop {
                 let (stream, _socket_addr) = listener.accept().await?;
