@@ -752,14 +752,15 @@ use serde::{
     de::{self, Deserialize, Deserializer},
     ser::{Serialize, Serializer},
 };
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 use uuid::Uuid;
 
 use crate::Error;
 
 /// HAP service and characteristic type representation.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub enum HapType {
+    #[default]
     Unknown,
     Custom(Uuid),
 {{#each sorted_characteristics as |c|}}\
@@ -770,9 +771,9 @@ pub enum HapType {
 {{/each}}\
 }
 
-impl ToString for HapType {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for HapType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let out = match self {
             HapType::Unknown => \"unknown\".into(),
             HapType::Custom(uuid) => uuid.hyphenated().to_string(),
 {{#each sorted_characteristics as |c|}}\
@@ -781,7 +782,8 @@ impl ToString for HapType {
 {{#each sorted_services as |s|}}\
 \t\t\tHapType::{{pascal_case s.DefaultDescription}} => \"{{uuid s.ShortUUID}}\".into(),
 {{/each}}\
-\t\t}
+\t\t};
+        write!(f, \"{out}\")
     }
 }
 
@@ -804,10 +806,6 @@ impl FromStr for HapType {
 \t\t\t_ => Err(Error::InvalidHapTypeString(s.to_string())),
 \t\t}
     }
-}
-
-impl Default for HapType {
-    fn default() -> HapType { HapType::Unknown }
 }
 
 impl<'de> Deserialize<'de> for HapType {

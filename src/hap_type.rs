@@ -4,14 +4,15 @@ use serde::{
     de::{self, Deserialize, Deserializer},
     ser::{Serialize, Serializer},
 };
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 use uuid::Uuid;
 
 use crate::Error;
 
 /// HAP service and characteristic type representation.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub enum HapType {
+    #[default]
     Unknown,
     Custom(Uuid),
 	AccessCodeControlPoint,
@@ -318,9 +319,9 @@ pub enum HapType {
 	WindowCovering,
 }
 
-impl ToString for HapType {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for HapType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let out = match self {
             HapType::Unknown => "unknown".into(),
             HapType::Custom(uuid) => uuid.hyphenated().to_string(),
 			HapType::AccessCodeControlPoint => "262".into(),
@@ -625,7 +626,8 @@ impl ToString for HapType {
 			HapType::WiFiTransport => "22A".into(),
 			HapType::Window => "8B".into(),
 			HapType::WindowCovering => "8C".into(),
-		}
+		};
+        write!(f, "{out}")
     }
 }
 
@@ -944,10 +946,6 @@ impl FromStr for HapType {
 			_ => Err(Error::InvalidHapTypeString(s.to_string())),
 		}
     }
-}
-
-impl Default for HapType {
-    fn default() -> HapType { HapType::Unknown }
 }
 
 impl<'de> Deserialize<'de> for HapType {
