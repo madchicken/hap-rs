@@ -43,8 +43,8 @@ impl AirParticulateDensityCharacteristic {
 				Perm::PairedRead,
             ],
 			unit: Some(Unit::MicrogramsPerCubicMeter),
-			max_value: Some(1000 as f32),
-			min_value: Some(0 as f32),
+			max_value: Some(1000.0),
+			min_value: Some(0.0),
             ..Default::default()
         });
 

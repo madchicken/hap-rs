@@ -43,9 +43,9 @@ impl CurrentTemperatureCharacteristic {
 				Perm::PairedRead,
             ],
 			unit: Some(Unit::Celsius),
-			max_value: Some(100 as f32),
-			min_value: Some(0 as f32),
-			step_value: Some(0.1 as f32),
+			max_value: Some(100.0),
+			min_value: Some(0.0),
+			step_value: Some(0.1),
             ..Default::default()
         });
 

@@ -673,8 +673,11 @@ fn float_helper(
     out: &mut dyn Output,
 ) -> Result<(), RenderError> {
     let format = h.param(0).unwrap().value().as_str().unwrap();
-    if format == "float" {
-        out.write(" as f32")?;
+    let value = h.param(1).unwrap().value().as_number().unwrap().to_string();
+    if format == "float" && !value.contains(".") {
+        out.write(&format!("{}.0", value))?;
+    } else {
+        out.write(&value)?;
     }
     Ok(())
 }
@@ -868,10 +871,10 @@ impl {{pascal_case characteristic.DefaultDescription}}Characteristic {
             perms: vec![{{perms characteristic.Properties}}
             ],\
             {{#if characteristic.Units}}\n\t\t\tunit: Some({{unit characteristic.Units}}),{{/if}}\
-            {{#if characteristic.MaxValue includeZero=true}}\n\t\t\tmax_value: Some({{characteristic.MaxValue}}{{float characteristic.Format}}),{{/if}}\
-            {{#if characteristic.MinValue includeZero=true}}\n\t\t\tmin_value: Some({{characteristic.MinValue}}{{float characteristic.Format}}),{{/if}}\
-            {{#if characteristic.StepValue includeZero=true}}\n\t\t\tstep_value: Some({{characteristic.StepValue}}{{float characteristic.Format}}),{{/if}}\
-            {{#if characteristic.MaxLength includeZero=true}}\n\t\t\tmax_len: Some({{characteristic.MaxLength}}{{float characteristic.Format}}),{{/if}}\
+            {{#if characteristic.MaxValue includeZero=true}}\n\t\t\tmax_value: Some({{float characteristic.Format characteristic.MaxValue}}),{{/if}}\
+            {{#if characteristic.MinValue includeZero=true}}\n\t\t\tmin_value: Some({{float characteristic.Format characteristic.MinValue}}),{{/if}}\
+            {{#if characteristic.StepValue includeZero=true}}\n\t\t\tstep_value: Some({{float characteristic.Format characteristic.StepValue}}),{{/if}}\
+            {{#if characteristic.MaxLength includeZero=true}}\n\t\t\tmax_len: Some({{float characteristic.Format characteristic.MaxLength}}),{{/if}}\
             {{#if in_values includeZero=true}}\n\t\t\tvalid_values: Some({{in_values in_values}}),{{/if}}{{#if out_values includeZero=true}}\n\t\t\tvalid_values: Some({{out_values out_values}}),{{/if}}
             ..Default::default()
         });

@@ -44,9 +44,9 @@ impl HueCharacteristic {
 				Perm::PairedWrite,
             ],
 			unit: Some(Unit::ArcDegrees),
-			max_value: Some(360 as f32),
-			min_value: Some(0 as f32),
-			step_value: Some(1 as f32),
+			max_value: Some(360.0),
+			min_value: Some(0.0),
+			step_value: Some(1.0),
             ..Default::default()
         });
 

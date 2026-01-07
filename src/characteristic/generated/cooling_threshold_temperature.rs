@@ -44,9 +44,9 @@ impl CoolingThresholdTemperatureCharacteristic {
 				Perm::PairedWrite,
             ],
 			unit: Some(Unit::Celsius),
-			max_value: Some(35 as f32),
-			min_value: Some(10 as f32),
-			step_value: Some(0.1 as f32),
+			max_value: Some(35.0),
+			min_value: Some(10.0),
+			step_value: Some(0.1),
             ..Default::default()
         });
 

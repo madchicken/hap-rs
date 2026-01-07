@@ -43,8 +43,8 @@ impl CurrentLightLevelCharacteristic {
 				Perm::PairedRead,
             ],
 			unit: Some(Unit::Lux),
-			max_value: Some(100000 as f32),
-			min_value: Some(0.0001 as f32),
+			max_value: Some(100000.0),
+			min_value: Some(0.0001),
             ..Default::default()
         });
 

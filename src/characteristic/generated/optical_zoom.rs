@@ -43,7 +43,7 @@ impl OpticalZoomCharacteristic {
 				Perm::PairedRead,
 				Perm::PairedWrite,
             ],
-			step_value: Some(0.1 as f32),
+			step_value: Some(0.1),
             ..Default::default()
         });
 
