@@ -3,9 +3,12 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    HapType,
-    characteristic::{HapCharacteristic, active::ActiveCharacteristic},
     service::HapService,
+    characteristic::{
+        HapCharacteristic,
+		active::ActiveCharacteristic,
+	},
+    HapType,
 };
 
 /// Accessory Metrics service.
@@ -22,18 +25,20 @@ pub struct AccessoryMetricsService {
     /// An array of numbers containing the instance IDs of the services that this service links to.
     linked_services: Vec<u64>,
 
-    /// Active characteristic (required).
-    pub active: ActiveCharacteristic,
+	/// Active characteristic (required).
+	pub active: ActiveCharacteristic,
+
 }
 
 impl AccessoryMetricsService {
     /// Creates a new Accessory Metrics service.
+    #[allow(clippy::identity_op)]
     pub fn new(id: u64, accessory_id: u64) -> Self {
         Self {
             id,
             hap_type: HapType::AccessoryMetrics,
-            active: ActiveCharacteristic::new(id + 1 + 0, accessory_id),
-            ..Default::default()
+			active: ActiveCharacteristic::new(id + 1 + 0, accessory_id),
+			..Default::default()
         }
     }
 }
@@ -95,14 +100,18 @@ impl HapService for AccessoryMetricsService {
 
     fn get_characteristics(&self) -> Vec<&dyn HapCharacteristic> {
         #[allow(unused_mut)]
-        let mut characteristics: Vec<&dyn HapCharacteristic> = vec![&self.active];
-        characteristics
+        let mut characteristics: Vec<&dyn HapCharacteristic> = vec![
+			&self.active,
+		];
+		characteristics
     }
 
     fn get_mut_characteristics(&mut self) -> Vec<&mut dyn HapCharacteristic> {
         #[allow(unused_mut)]
-        let mut characteristics: Vec<&mut dyn HapCharacteristic> = vec![&mut self.active];
-        characteristics
+        let mut characteristics: Vec<&mut dyn HapCharacteristic> = vec![
+			&mut self.active,
+		];
+		characteristics
     }
 }
 

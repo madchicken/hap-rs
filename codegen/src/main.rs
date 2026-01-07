@@ -303,6 +303,36 @@ fn type_helper(
     Ok(())
 }
 
+fn clone_helper(
+    h: &Helper,
+    _: &Handlebars,
+    _: &Context,
+    _: &mut RenderContext,
+    out: &mut dyn Output,
+) -> Result<(), RenderError> {
+    let param = h.param(0).unwrap().value();
+    let param2 = h.param(1).unwrap().value();
+    let val = param2.as_str().unwrap();
+    if let Some(s) = param.as_str() {
+        match s {
+            "bool" | "uint8" | "uint16" | "uint32" | "uint64" | "int" | "int32" | "float" => {
+                if val.ends_with("]") {
+                    out.write(val)?;
+                } else {
+                    out.write(format!("*{val}").as_str())?;
+                }
+            },
+            "string" | "tlv8" | "data" => {
+                out.write(format!("{val}.clone()").as_str())?;
+            },
+            _ => {
+                return Err(RenderError::new("Unknown Characteristic format"));
+            },
+        }
+    }
+    Ok(())
+}
+
 fn format_helper(
     h: &Helper,
     _: &Handlebars,
@@ -744,7 +774,7 @@ impl ToString for HapType {
     fn to_string(&self) -> String {
         match self {
             HapType::Unknown => \"unknown\".into(),
-            HapType::Custom(uuid) => uuid.to_hyphenated().to_string(),
+            HapType::Custom(uuid) => uuid.hyphenated().to_string(),
 {{#each sorted_characteristics as |c|}}\
 \t\t\tHapType::{{pascal_case c.DefaultDescription}} => \"{{uuid c.ShortUUID}}\".into(),
 {{/each}}\
@@ -849,10 +879,10 @@ impl {{pascal_case characteristic.DefaultDescription}}Characteristic {
         });
 
         if let Some(ref min_value) = &c.0.min_value {
-            c.0.value = min_value.clone();
+            c.0.value = {{clone characteristic.Format \"min_value\"}};
         } else if let Some(ref valid_values) = &c.0.valid_values {
-            if valid_values.len() > 0 {
-                c.0.value = valid_values[0].clone();
+            if !valid_values.is_empty() {
+                c.0.value = {{clone characteristic.Format \"valid_values[0]\"}};
             }
         }
 
@@ -1023,6 +1053,7 @@ pub struct {{pascal_case service.DefaultDescription}}Service {
 
 impl {{pascal_case service.DefaultDescription}}Service {
     /// Creates a new {{service.DefaultDescription}} service.
+    #[allow(clippy::identity_op)]
     pub fn new(id: u64, accessory_id: u64) -> Self {
         Self {
             id,
@@ -1080,21 +1111,17 @@ impl HapService for {{pascal_case service.DefaultDescription}}Service {
     }
 
     fn get_characteristic(&self, hap_type: HapType) -> Option<&dyn HapCharacteristic> {
-        for characteristic in self.get_characteristics() {
-            if characteristic.get_type() == hap_type {
-                return Some(characteristic);
-            }
-        }
-        None
+        self.get_characteristics()
+            .into_iter()
+            .find(|&characteristic| characteristic.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_mut_characteristic(&mut self, hap_type: HapType) -> Option<&mut dyn HapCharacteristic> {
-        for characteristic in self.get_mut_characteristics() {
-            if characteristic.get_type() == hap_type {
-                return Some(characteristic);
-            }
-        }
-        None
+        self.get_mut_characteristics()
+            .into_iter()
+            .find(|characteristic| characteristic.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_characteristics(&self) -> Vec<&dyn HapCharacteristic> {
@@ -1170,6 +1197,7 @@ pub struct {{pascal_case service.DefaultDescription}}Accessory {
 
 impl {{pascal_case service.DefaultDescription}}Accessory {
     /// Creates a new {{service.DefaultDescription}} accessory.
+    #[allow(clippy::identity_op)]
     pub fn new(id: u64, information: AccessoryInformation) -> Result<Self> {
         let accessory_information = information.to_service(1, id)?;
         let {{snake_case service.DefaultDescription}}_id = accessory_information.get_characteristics().len() as u64;
@@ -1194,21 +1222,17 @@ impl HapAccessory for {{pascal_case service.DefaultDescription}}Accessory {
     }
 
     fn get_service(&self, hap_type: HapType) -> Option<&dyn HapService> {
-        for service in self.get_services() {
-            if service.get_type() == hap_type {
-                return Some(service);
-            }
-        }
-        None
+        self.get_services()
+            .into_iter()
+            .find(|&service| service.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_mut_service(&mut self, hap_type: HapType) -> Option<&mut dyn HapService> {
-        for service in self.get_mut_services() {
-            if service.get_type() == hap_type {
-                return Some(service);
-            }
-        }
-        None
+        self.get_mut_services()
+            .into_iter()
+            .find(|service| service.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {
@@ -1241,8 +1265,6 @@ static ACCESSORY_MOD: &str = "// this file is auto-generated by hap-codegen
 ";
 
 static EXAMPLE: &str = "\
-use tokio;
-
 use hap::{
     accessory::{AccessoryCategory, AccessoryInformation, {{snake_case service.DefaultDescription}}::{{pascal_case service.DefaultDescription}}Accessory},
     server::{IpServer, Server},
@@ -1392,6 +1414,7 @@ fn main() {
     handlebars.register_helper("array_length", Box::new(array_length_helper));
     handlebars.register_helper("snake_case", Box::new(snake_case_helper));
     handlebars.register_helper("pascal_case", Box::new(pascal_case_helper));
+    handlebars.register_helper("clone", Box::new(clone_helper));
     handlebars.register_template_string("categories", CATEGORIES).unwrap();
     handlebars.register_template_string("hap_type", HAP_TYPE).unwrap(); // PascalCase camelCase
     handlebars

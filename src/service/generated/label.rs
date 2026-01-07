@@ -32,6 +32,7 @@ pub struct LabelService {
 
 impl LabelService {
     /// Creates a new Label service.
+    #[allow(clippy::identity_op)]
     pub fn new(id: u64, accessory_id: u64) -> Self {
         Self {
             id,
@@ -84,21 +85,17 @@ impl HapService for LabelService {
     }
 
     fn get_characteristic(&self, hap_type: HapType) -> Option<&dyn HapCharacteristic> {
-        for characteristic in self.get_characteristics() {
-            if characteristic.get_type() == hap_type {
-                return Some(characteristic);
-            }
-        }
-        None
+        self.get_characteristics()
+            .into_iter()
+            .find(|&characteristic| characteristic.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_mut_characteristic(&mut self, hap_type: HapType) -> Option<&mut dyn HapCharacteristic> {
-        for characteristic in self.get_mut_characteristics() {
-            if characteristic.get_type() == hap_type {
-                return Some(characteristic);
-            }
-        }
-        None
+        self.get_mut_characteristics()
+            .into_iter()
+            .find(|characteristic| characteristic.get_type() == hap_type)
+            .map(|v| v as _)
     }
 
     fn get_characteristics(&self) -> Vec<&dyn HapCharacteristic> {

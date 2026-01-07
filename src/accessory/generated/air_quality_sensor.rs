@@ -3,11 +3,10 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    HapType, Result,
-    accessory::{AccessoryInformation, HapAccessory},
-    service::{
-        HapService, accessory_information::AccessoryInformationService, air_quality_sensor::AirQualitySensorService,
-    },
+	accessory::{AccessoryInformation, HapAccessory},
+	service::{HapService, accessory_information::AccessoryInformationService, air_quality_sensor::AirQualitySensorService},
+	HapType,
+	Result,
 };
 
 /// Air Quality Sensor accessory.
@@ -24,6 +23,7 @@ pub struct AirQualitySensorAccessory {
 
 impl AirQualitySensorAccessory {
     /// Creates a new Air Quality Sensor accessory.
+    #[allow(clippy::identity_op)]
     pub fn new(id: u64, information: AccessoryInformation) -> Result<Self> {
         let accessory_information = information.to_service(1, id)?;
         let air_quality_sensor_id = accessory_information.get_characteristics().len() as u64;
@@ -62,11 +62,17 @@ impl HapAccessory for AirQualitySensorAccessory {
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {
-        vec![&self.accessory_information, &self.air_quality_sensor]
+        vec![
+            &self.accessory_information,
+            &self.air_quality_sensor,
+        ]
     }
 
     fn get_mut_services(&mut self) -> Vec<&mut dyn HapService> {
-        vec![&mut self.accessory_information, &mut self.air_quality_sensor]
+        vec![
+            &mut self.accessory_information,
+            &mut self.air_quality_sensor,
+        ]
     }
 }
 

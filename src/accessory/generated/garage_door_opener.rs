@@ -3,11 +3,10 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    HapType, Result,
-    accessory::{AccessoryInformation, HapAccessory},
-    service::{
-        HapService, accessory_information::AccessoryInformationService, garage_door_opener::GarageDoorOpenerService,
-    },
+	accessory::{AccessoryInformation, HapAccessory},
+	service::{HapService, accessory_information::AccessoryInformationService, garage_door_opener::GarageDoorOpenerService},
+	HapType,
+	Result,
 };
 
 /// Garage Door Opener accessory.
@@ -24,6 +23,7 @@ pub struct GarageDoorOpenerAccessory {
 
 impl GarageDoorOpenerAccessory {
     /// Creates a new Garage Door Opener accessory.
+    #[allow(clippy::identity_op)]
     pub fn new(id: u64, information: AccessoryInformation) -> Result<Self> {
         let accessory_information = information.to_service(1, id)?;
         let garage_door_opener_id = accessory_information.get_characteristics().len() as u64;
@@ -62,11 +62,17 @@ impl HapAccessory for GarageDoorOpenerAccessory {
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {
-        vec![&self.accessory_information, &self.garage_door_opener]
+        vec![
+            &self.accessory_information,
+            &self.garage_door_opener,
+        ]
     }
 
     fn get_mut_services(&mut self) -> Vec<&mut dyn HapService> {
-        vec![&mut self.accessory_information, &mut self.garage_door_opener]
+        vec![
+            &mut self.accessory_information,
+            &mut self.garage_door_opener,
+        ]
     }
 }
 

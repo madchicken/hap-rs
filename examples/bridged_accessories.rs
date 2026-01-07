@@ -1,34 +1,41 @@
-use tokio;
-
 use hap::{
-    accessory::{bridge::BridgeAccessory, lightbulb::LightbulbAccessory, AccessoryCategory, AccessoryInformation},
+    Config, MacAddress, Pin, Result,
+    accessory::{AccessoryCategory, AccessoryInformation, bridge::BridgeAccessory, lightbulb::LightbulbAccessory},
     characteristic::CharacteristicCallbacks,
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
-    Config,
-    MacAddress,
-    Pin,
-    Result,
 };
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let bridge = BridgeAccessory::new(1, AccessoryInformation {
-        name: "Acme Bridge".into(),
-        ..Default::default()
-    })?;
-    let mut lightbulb_1 = LightbulbAccessory::new(2, AccessoryInformation {
-        name: "Lightbulb 1".into(),
-        ..Default::default()
-    })?;
-    let mut lightbulb_2 = LightbulbAccessory::new(3, AccessoryInformation {
-        name: "Lightbulb 2".into(),
-        ..Default::default()
-    })?;
-    let mut lightbulb_3 = LightbulbAccessory::new(4, AccessoryInformation {
-        name: "Lightbulb 3".into(),
-        ..Default::default()
-    })?;
+    let bridge = BridgeAccessory::new(
+        1,
+        AccessoryInformation {
+            name: "Acme Bridge".into(),
+            ..Default::default()
+        },
+    )?;
+    let mut lightbulb_1 = LightbulbAccessory::new(
+        2,
+        AccessoryInformation {
+            name: "Lightbulb 1".into(),
+            ..Default::default()
+        },
+    )?;
+    let mut lightbulb_2 = LightbulbAccessory::new(
+        3,
+        AccessoryInformation {
+            name: "Lightbulb 2".into(),
+            ..Default::default()
+        },
+    )?;
+    let mut lightbulb_3 = LightbulbAccessory::new(
+        4,
+        AccessoryInformation {
+            name: "Lightbulb 3".into(),
+            ..Default::default()
+        },
+    )?;
 
     lightbulb_1
         .lightbulb

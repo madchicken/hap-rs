@@ -202,7 +202,7 @@ impl Storage for FileStorage {
             let pairing_bytes = pairing.as_bytes()?;
             self.write_bytes("pairings/admin.json", pairing_bytes).await?;
         }
-        let key = format!("pairings/{}.json", pairing.id.to_string());
+        let key = format!("pairings/{}.json", pairing.id);
         let pairing_bytes = pairing.as_bytes()?;
         self.write_bytes(&key, pairing_bytes).await
     }

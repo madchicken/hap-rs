@@ -1,7 +1,5 @@
-use tokio;
-
 use hap::{
-    accessory::{wi_fi_satellite::WiFiSatelliteAccessory, AccessoryCategory, AccessoryInformation},
+    accessory::{AccessoryCategory, AccessoryInformation, wi_fi_satellite::WiFiSatelliteAccessory},
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
     Config,

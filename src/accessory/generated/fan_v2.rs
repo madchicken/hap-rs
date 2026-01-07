@@ -3,9 +3,10 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    HapType, Result,
-    accessory::{AccessoryInformation, HapAccessory},
-    service::{HapService, accessory_information::AccessoryInformationService, fan_v2::FanV2Service},
+	accessory::{AccessoryInformation, HapAccessory},
+	service::{HapService, accessory_information::AccessoryInformationService, fan_v2::FanV2Service},
+	HapType,
+	Result,
 };
 
 /// Fan v2 accessory.
@@ -22,6 +23,7 @@ pub struct FanV2Accessory {
 
 impl FanV2Accessory {
     /// Creates a new Fan v2 accessory.
+    #[allow(clippy::identity_op)]
     pub fn new(id: u64, information: AccessoryInformation) -> Result<Self> {
         let accessory_information = information.to_service(1, id)?;
         let fan_v2_id = accessory_information.get_characteristics().len() as u64;
@@ -60,11 +62,17 @@ impl HapAccessory for FanV2Accessory {
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {
-        vec![&self.accessory_information, &self.fan_v2]
+        vec![
+            &self.accessory_information,
+            &self.fan_v2,
+        ]
     }
 
     fn get_mut_services(&mut self) -> Vec<&mut dyn HapService> {
-        vec![&mut self.accessory_information, &mut self.fan_v2]
+        vec![
+            &mut self.accessory_information,
+            &mut self.fan_v2,
+        ]
     }
 }
 

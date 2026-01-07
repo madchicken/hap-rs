@@ -1,7 +1,5 @@
-use tokio;
-
 use hap::{
-    accessory::{window::WindowAccessory, AccessoryCategory, AccessoryInformation},
+    accessory::{AccessoryCategory, AccessoryInformation, window::WindowAccessory},
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
     Config,

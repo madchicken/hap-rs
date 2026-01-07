@@ -3,9 +3,10 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    HapType, Result,
-    accessory::{AccessoryInformation, HapAccessory},
-    service::{HapService, accessory_information::AccessoryInformationService, leak_sensor::LeakSensorService},
+	accessory::{AccessoryInformation, HapAccessory},
+	service::{HapService, accessory_information::AccessoryInformationService, leak_sensor::LeakSensorService},
+	HapType,
+	Result,
 };
 
 /// Leak Sensor accessory.
@@ -22,6 +23,7 @@ pub struct LeakSensorAccessory {
 
 impl LeakSensorAccessory {
     /// Creates a new Leak Sensor accessory.
+    #[allow(clippy::identity_op)]
     pub fn new(id: u64, information: AccessoryInformation) -> Result<Self> {
         let accessory_information = information.to_service(1, id)?;
         let leak_sensor_id = accessory_information.get_characteristics().len() as u64;
@@ -60,11 +62,17 @@ impl HapAccessory for LeakSensorAccessory {
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {
-        vec![&self.accessory_information, &self.leak_sensor]
+        vec![
+            &self.accessory_information,
+            &self.leak_sensor,
+        ]
     }
 
     fn get_mut_services(&mut self) -> Vec<&mut dyn HapService> {
-        vec![&mut self.accessory_information, &mut self.leak_sensor]
+        vec![
+            &mut self.accessory_information,
+            &mut self.leak_sensor,
+        ]
     }
 }
 

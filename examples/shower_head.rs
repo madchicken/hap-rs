@@ -1,21 +1,19 @@
-use tokio;
-
 use hap::{
-    accessory::{shower_head::ShowerHeadAccessory, AccessoryCategory, AccessoryInformation},
+    Config, MacAddress, Pin, Result,
+    accessory::{AccessoryCategory, AccessoryInformation, shower_head::ShowerHeadAccessory},
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
-    Config,
-    MacAddress,
-    Pin,
-    Result,
 };
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let shower_head = ShowerHeadAccessory::new(1, AccessoryInformation {
-        name: "Acme Shower Head".into(),
-        ..Default::default()
-    })?;
+    let shower_head = ShowerHeadAccessory::new(
+        1,
+        AccessoryInformation {
+            name: "Acme Shower Head".into(),
+            ..Default::default()
+        },
+    )?;
 
     let mut storage = FileStorage::current_dir().await?;
 

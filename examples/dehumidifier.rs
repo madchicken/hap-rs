@@ -1,21 +1,19 @@
-use tokio;
-
 use hap::{
-    accessory::{humidifier_dehumidifier::HumidifierDehumidifierAccessory, AccessoryCategory, AccessoryInformation},
+    Config, MacAddress, Pin, Result,
+    accessory::{AccessoryCategory, AccessoryInformation, humidifier_dehumidifier::HumidifierDehumidifierAccessory},
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
-    Config,
-    MacAddress,
-    Pin,
-    Result,
 };
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let dehumidifier = HumidifierDehumidifierAccessory::new(1, AccessoryInformation {
-        name: "Acme Dehumidifier".into(),
-        ..Default::default()
-    })?;
+    let dehumidifier = HumidifierDehumidifierAccessory::new(
+        1,
+        AccessoryInformation {
+            name: "Acme Dehumidifier".into(),
+            ..Default::default()
+        },
+    )?;
 
     let mut storage = FileStorage::current_dir().await?;
 

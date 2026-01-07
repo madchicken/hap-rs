@@ -1,21 +1,19 @@
-use tokio;
-
 use hap::{
-    accessory::{irrigation_system::IrrigationSystemAccessory, AccessoryCategory, AccessoryInformation},
+    Config, MacAddress, Pin, Result,
+    accessory::{AccessoryCategory, AccessoryInformation, irrigation_system::IrrigationSystemAccessory},
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
-    Config,
-    MacAddress,
-    Pin,
-    Result,
 };
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let irrigation_system = IrrigationSystemAccessory::new(1, AccessoryInformation {
-        name: "Acme Irrigation-System".into(),
-        ..Default::default()
-    })?;
+    let irrigation_system = IrrigationSystemAccessory::new(
+        1,
+        AccessoryInformation {
+            name: "Acme Irrigation-System".into(),
+            ..Default::default()
+        },
+    )?;
 
     let mut storage = FileStorage::current_dir().await?;
 

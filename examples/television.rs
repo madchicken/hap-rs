@@ -1,21 +1,19 @@
-use tokio;
-
 use hap::{
-    accessory::{television::TelevisionAccessory, AccessoryCategory, AccessoryInformation},
+    Config, MacAddress, Pin, Result,
+    accessory::{AccessoryCategory, AccessoryInformation, television::TelevisionAccessory},
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
-    Config,
-    MacAddress,
-    Pin,
-    Result,
 };
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let television = TelevisionAccessory::new(1, AccessoryInformation {
-        name: "Acme Television".into(),
-        ..Default::default()
-    })?;
+    let television = TelevisionAccessory::new(
+        1,
+        AccessoryInformation {
+            name: "Acme Television".into(),
+            ..Default::default()
+        },
+    )?;
 
     let mut storage = FileStorage::current_dir().await?;
 

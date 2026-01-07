@@ -3,9 +3,10 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    HapType, Result,
-    accessory::{AccessoryInformation, HapAccessory},
-    service::{HapService, accessory_information::AccessoryInformationService, window_covering::WindowCoveringService},
+	accessory::{AccessoryInformation, HapAccessory},
+	service::{HapService, accessory_information::AccessoryInformationService, window_covering::WindowCoveringService},
+	HapType,
+	Result,
 };
 
 /// Window Covering accessory.
@@ -22,6 +23,7 @@ pub struct WindowCoveringAccessory {
 
 impl WindowCoveringAccessory {
     /// Creates a new Window Covering accessory.
+    #[allow(clippy::identity_op)]
     pub fn new(id: u64, information: AccessoryInformation) -> Result<Self> {
         let accessory_information = information.to_service(1, id)?;
         let window_covering_id = accessory_information.get_characteristics().len() as u64;
@@ -60,11 +62,17 @@ impl HapAccessory for WindowCoveringAccessory {
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {
-        vec![&self.accessory_information, &self.window_covering]
+        vec![
+            &self.accessory_information,
+            &self.window_covering,
+        ]
     }
 
     fn get_mut_services(&mut self) -> Vec<&mut dyn HapService> {
-        vec![&mut self.accessory_information, &mut self.window_covering]
+        vec![
+            &mut self.accessory_information,
+            &mut self.window_covering,
+        ]
     }
 }
 

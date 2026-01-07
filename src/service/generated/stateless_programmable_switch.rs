@@ -3,17 +3,19 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    HapType,
-    characteristic::{
-        HapCharacteristic, label_index::LabelIndexCharacteristic, name::NameCharacteristic,
-        programmable_switch_event::ProgrammableSwitchEventCharacteristic,
-    },
     service::HapService,
+    characteristic::{
+        HapCharacteristic,
+		programmable_switch_event::ProgrammableSwitchEventCharacteristic,
+		name::NameCharacteristic,
+		label_index::LabelIndexCharacteristic,
+	},
+    HapType,
 };
 
 /// Stateless Programmable Switch service.
 #[derive(Debug, Default)]
-pub struct DoorbellService {
+pub struct StatelessProgrammableSwitchService {
     /// Instance ID of the Stateless Programmable Switch service.
     id: u64,
     /// [`HapType`](HapType) of the Stateless Programmable Switch service.
@@ -25,31 +27,31 @@ pub struct DoorbellService {
     /// An array of numbers containing the instance IDs of the services that this service links to.
     linked_services: Vec<u64>,
 
-    /// Programmable Switch Event characteristic (required).
-    pub programmable_switch_event: ProgrammableSwitchEventCharacteristic,
+	/// Programmable Switch Event characteristic (required).
+	pub programmable_switch_event: ProgrammableSwitchEventCharacteristic,
 
-    /// Name characteristic (optional).
-    pub name: Option<NameCharacteristic>,
-    /// Label Index characteristic (optional).
-    pub label_index: Option<LabelIndexCharacteristic>,
+	/// Name characteristic (optional).
+	pub name: Option<NameCharacteristic>,
+	/// Label Index characteristic (optional).
+	pub label_index: Option<LabelIndexCharacteristic>,
 }
 
-impl DoorbellService {
+impl StatelessProgrammableSwitchService {
     /// Creates a new Stateless Programmable Switch service.
     #[allow(clippy::identity_op)]
     pub fn new(id: u64, accessory_id: u64) -> Self {
         Self {
             id,
             hap_type: HapType::StatelessProgrammableSwitch,
-            programmable_switch_event: ProgrammableSwitchEventCharacteristic::new(id + 1 + 0, accessory_id),
-            name: Some(NameCharacteristic::new(id + 1 + 0 + 1, accessory_id)),
-            label_index: Some(LabelIndexCharacteristic::new(id + 1 + 1 + 1, accessory_id)),
-            ..Default::default()
+			programmable_switch_event: ProgrammableSwitchEventCharacteristic::new(id + 1 + 0, accessory_id),
+			name: Some(NameCharacteristic::new(id + 1 + 0 + 1, accessory_id)),
+			label_index: Some(LabelIndexCharacteristic::new(id + 1 + 1 + 1, accessory_id)),
+			..Default::default()
         }
     }
 }
 
-impl HapService for DoorbellService {
+impl HapService for StatelessProgrammableSwitchService {
     fn get_id(&self) -> u64 {
         self.id
     }
@@ -106,30 +108,34 @@ impl HapService for DoorbellService {
 
     fn get_characteristics(&self) -> Vec<&dyn HapCharacteristic> {
         #[allow(unused_mut)]
-        let mut characteristics: Vec<&dyn HapCharacteristic> = vec![&self.programmable_switch_event];
-        if let Some(c) = &self.name {
-            characteristics.push(c);
-        }
-        if let Some(c) = &self.label_index {
-            characteristics.push(c);
-        }
-        characteristics
+        let mut characteristics: Vec<&dyn HapCharacteristic> = vec![
+			&self.programmable_switch_event,
+		];
+		if let Some(c) = &self.name {
+		    characteristics.push(c);
+		}
+		if let Some(c) = &self.label_index {
+		    characteristics.push(c);
+		}
+		characteristics
     }
 
     fn get_mut_characteristics(&mut self) -> Vec<&mut dyn HapCharacteristic> {
         #[allow(unused_mut)]
-        let mut characteristics: Vec<&mut dyn HapCharacteristic> = vec![&mut self.programmable_switch_event];
-        if let Some(c) = &mut self.name {
-            characteristics.push(c);
-        }
-        if let Some(c) = &mut self.label_index {
-            characteristics.push(c);
-        }
-        characteristics
+        let mut characteristics: Vec<&mut dyn HapCharacteristic> = vec![
+			&mut self.programmable_switch_event,
+		];
+		if let Some(c) = &mut self.name {
+		    characteristics.push(c);
+		}
+		if let Some(c) = &mut self.label_index {
+		    characteristics.push(c);
+		}
+		characteristics
     }
 }
 
-impl Serialize for DoorbellService {
+impl Serialize for StatelessProgrammableSwitchService {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut state = serializer.serialize_struct("HapService", 5)?;
         state.serialize_field("iid", &self.get_id())?;

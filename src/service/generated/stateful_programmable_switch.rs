@@ -3,12 +3,14 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    HapType,
-    characteristic::{
-        HapCharacteristic, name::NameCharacteristic, programmable_switch_event::ProgrammableSwitchEventCharacteristic,
-        programmable_switch_output_state::ProgrammableSwitchOutputStateCharacteristic,
-    },
     service::HapService,
+    characteristic::{
+        HapCharacteristic,
+		programmable_switch_event::ProgrammableSwitchEventCharacteristic,
+		programmable_switch_output_state::ProgrammableSwitchOutputStateCharacteristic,
+		name::NameCharacteristic,
+	},
+    HapType,
 };
 
 /// Stateful Programmable Switch service.
@@ -25,13 +27,13 @@ pub struct StatefulProgrammableSwitchService {
     /// An array of numbers containing the instance IDs of the services that this service links to.
     linked_services: Vec<u64>,
 
-    /// Programmable Switch Event characteristic (required).
-    pub programmable_switch_event: ProgrammableSwitchEventCharacteristic,
-    /// Programmable Switch Output State characteristic (required).
-    pub programmable_switch_output_state: ProgrammableSwitchOutputStateCharacteristic,
+	/// Programmable Switch Event characteristic (required).
+	pub programmable_switch_event: ProgrammableSwitchEventCharacteristic,
+	/// Programmable Switch Output State characteristic (required).
+	pub programmable_switch_output_state: ProgrammableSwitchOutputStateCharacteristic,
 
-    /// Name characteristic (optional).
-    pub name: Option<NameCharacteristic>,
+	/// Name characteristic (optional).
+	pub name: Option<NameCharacteristic>,
 }
 
 impl StatefulProgrammableSwitchService {
@@ -41,13 +43,10 @@ impl StatefulProgrammableSwitchService {
         Self {
             id,
             hap_type: HapType::StatefulProgrammableSwitch,
-            programmable_switch_event: ProgrammableSwitchEventCharacteristic::new(id + 1 + 0, accessory_id),
-            programmable_switch_output_state: ProgrammableSwitchOutputStateCharacteristic::new(
-                id + 1 + 1,
-                accessory_id,
-            ),
-            name: Some(NameCharacteristic::new(id + 1 + 0 + 2, accessory_id)),
-            ..Default::default()
+			programmable_switch_event: ProgrammableSwitchEventCharacteristic::new(id + 1 + 0, accessory_id),
+			programmable_switch_output_state: ProgrammableSwitchOutputStateCharacteristic::new(id + 1 + 1, accessory_id),
+			name: Some(NameCharacteristic::new(id + 1 + 0 + 2, accessory_id)),
+			..Default::default()
         }
     }
 }
@@ -109,24 +108,26 @@ impl HapService for StatefulProgrammableSwitchService {
 
     fn get_characteristics(&self) -> Vec<&dyn HapCharacteristic> {
         #[allow(unused_mut)]
-        let mut characteristics: Vec<&dyn HapCharacteristic> =
-            vec![&self.programmable_switch_event, &self.programmable_switch_output_state];
-        if let Some(c) = &self.name {
-            characteristics.push(c);
-        }
-        characteristics
+        let mut characteristics: Vec<&dyn HapCharacteristic> = vec![
+			&self.programmable_switch_event,
+			&self.programmable_switch_output_state,
+		];
+		if let Some(c) = &self.name {
+		    characteristics.push(c);
+		}
+		characteristics
     }
 
     fn get_mut_characteristics(&mut self) -> Vec<&mut dyn HapCharacteristic> {
         #[allow(unused_mut)]
         let mut characteristics: Vec<&mut dyn HapCharacteristic> = vec![
-            &mut self.programmable_switch_event,
-            &mut self.programmable_switch_output_state,
-        ];
-        if let Some(c) = &mut self.name {
-            characteristics.push(c);
-        }
-        characteristics
+			&mut self.programmable_switch_event,
+			&mut self.programmable_switch_output_state,
+		];
+		if let Some(c) = &mut self.name {
+		    characteristics.push(c);
+		}
+		characteristics
     }
 }
 
