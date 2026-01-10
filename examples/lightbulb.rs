@@ -41,7 +41,7 @@ async fn main() -> Result<()> {
 
     let handle = server.run_handle();
 
-    std::env::set_var("RUST_LOG", "hap=debug");
+    std::env::set_var("RUST_LOG", "hap=info");
     env_logger::init();
 
     handle.await

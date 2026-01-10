@@ -215,7 +215,7 @@ pub fn compute_sh(setup_id: &str, accessory_id: &str) -> String {
     // 2. Primi 4 byte
     let first4 = &hash[..4];
     // 3. Base64 standard (url-safe)
-    base64::prelude::BASE64_URL_SAFE.encode(first4)
+    base64::prelude::BASE64_STANDARD.encode(first4)
 }
 
 fn generate_setup_id() -> String {
@@ -258,6 +258,6 @@ mod tests {
         let accessory_id = "00:25:29:17:01:EC";
 
         let sh = super::compute_sh(setup_id, accessory_id);
-        assert_eq!("d_fBuw==", sh); // deve stampare: d/fB
+        assert_eq!("d/fBuw==", sh); // deve stampare: d/fB
     }
 }
