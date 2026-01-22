@@ -95,6 +95,10 @@ impl HapCharacteristic for LabelNamespaceCharacteristic {
         HapCharacteristic::set_value(&mut self.0, value).await
     }
 
+    async fn update_value(&mut self, value: serde_json::Value) -> Result<()> {
+        HapCharacteristic::update_value(&mut self.0, value).await
+    }
+
     fn get_unit(&self) -> Option<Unit> { HapCharacteristic::get_unit(&self.0) }
 
     fn set_unit(&mut self, unit: Option<Unit>) { HapCharacteristic::set_unit(&mut self.0, unit) }

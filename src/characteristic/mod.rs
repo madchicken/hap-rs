@@ -246,6 +246,8 @@ where
     }
 
     /// Sets the value of the characteristic.
+    /// This updates the value by calling the CharacteristicEventTypes.SET event handler associated with the characteristic. This acts the same way as when a HomeKit controller sends a /characteristics request to update the characteristic. An event notification will be sent to all connected HomeKit controllers which are registered to receive event notifications for this characteristic.
+    /// This method behaves like a update_value call with the addition that the own on_update* handler is called.
     pub async fn set_value(&mut self, val: T) -> Result<()> {
         // TODO - check for min/max on types implementing PartialOrd
         // if let Some(ref max) = self.inner.try_borrow()?.max_value {
@@ -271,6 +273,25 @@ where
                 .map_err(Error::ValueOnUpdate)?;
         }
 
+        if self.event_notifications == Some(true) {
+            if let Some(ref event_emitter) = self.event_emitter {
+                event_emitter
+                    .lock()
+                    .await
+                    .emit(&Event::CharacteristicValueChanged {
+                        aid: self.accessory_id,
+                        iid: self.id,
+                        value: json!(&val),
+                    })
+                    .await;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Updates the value of the characteristic.
+    pub async fn update_value(&mut self, val: T) -> Result<()> {
         if self.event_notifications == Some(true) {
             if let Some(ref event_emitter) = self.event_emitter {
                 event_emitter
@@ -571,6 +592,8 @@ pub trait HapCharacteristic: HapCharacteristicSetup + erased_serde::Serialize + 
     async fn get_value(&mut self) -> Result<serde_json::Value>;
     /// Sets the value of the characteristic.
     async fn set_value(&mut self, value: serde_json::Value) -> Result<()>;
+    /// Updates the value of the characteristic.
+    async fn update_value(&mut self, value: serde_json::Value) -> Result<()>;
     /// Returns the [`Unit`](Unit) of the characteristic.
     fn get_unit(&self) -> Option<Unit>;
     /// Sets the [`Unit`](Unit) of the characteristic.
@@ -784,6 +807,24 @@ where
             v = serde_json::from_value(value).map_err(|_| Error::InvalidValue(Characteristic::get_format(self)))?;
         }
         Characteristic::set_value(self, v).await
+    }
+
+    async fn update_value(&mut self, value: serde_json::Value) -> Result<()> {
+        let v;
+        // for whatever reason, the controller is setting boolean values either as a boolean or as an integer
+        if self.format == Format::Bool && value.is_number() {
+            let num_v: u8 = serde_json::from_value(value)?;
+            if num_v == 0 {
+                v = serde_json::from_value(json!(false))?;
+            } else if num_v == 1 {
+                v = serde_json::from_value(json!(true))?;
+            } else {
+                return Err(Error::InvalidValue(Characteristic::get_format(self)));
+            }
+        } else {
+            v = serde_json::from_value(value).map_err(|_| Error::InvalidValue(Characteristic::get_format(self)))?;
+        }
+        Characteristic::update_value(self, v).await
     }
 
     fn get_unit(&self) -> Option<Unit> {
