@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use log::debug;
+use log::{debug, error};
 use std::{
     env,
     ffi::OsStr,
@@ -209,7 +209,11 @@ impl Storage for FileStorage {
 
     async fn delete_pairing(&mut self, id: &Uuid) -> Result<()> {
         let key = format!("pairings/{id}.json");
-        self.remove_file(&key).await
+        if self.remove_file(&key).await.is_err() {
+            error!("Failed to delete pairing, trying remove admin.json");
+            self.remove_file("pairings/admin.json").await?;
+        }
+        Ok(())
     }
 
     async fn list_pairings(&self) -> Result<Vec<Pairing>> {
