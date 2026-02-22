@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use log::info;
+use log::{error, info};
 use mdns_sd::{IfKind, Receiver, ServiceDaemon, ServiceEvent, ServiceInfo};
 use tokio::task::JoinHandle;
 
@@ -65,19 +65,25 @@ impl MdnsResponder {
     }
 
     /// Returns the mDNS task to throw on a scheduler.
-    pub async fn run_handle(&self) -> JoinHandle<()> {
+    pub async fn run_handle(&self) -> JoinHandle<bool> {
         let receiver = self.receiver.clone();
         tokio::spawn(async move {
-            while let Ok(event) = receiver.recv() {
-                match event {
-                    ServiceEvent::ServiceResolved(info) => {
-                        info!("Found HAP service: {}", info.fullname);
+            loop {
+                match receiver.recv() {
+                    Ok(event) => match event {
+                        ServiceEvent::ServiceResolved(info) => {
+                            info!("Found HAP service: {}", info.fullname);
+                        },
+                        ServiceEvent::ServiceRemoved(service_type, fullname) => {
+                            info!("Removed HAP service: {}, {}", service_type, fullname);
+                            break true;
+                        },
+                        _ => {},
                     },
-                    ServiceEvent::ServiceRemoved(service_type, fullname) => {
-                        info!("Removed HAP service: {}, {}", service_type, fullname);
-                        break;
+                    Err(e) => {
+                        error!("mDNS Error: {e}");
+                        break false;
                     },
-                    _ => {},
                 }
             }
         })

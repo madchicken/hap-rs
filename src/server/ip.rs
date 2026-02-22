@@ -214,11 +214,24 @@ impl Server for IpServer {
         let http_handle = self.http_server.run_handle();
         let mdns_responder = self.mdns_responder.clone();
 
+        let mdns_loop = async move {
+            loop {
+                let join_handle = mdns_responder.run_handle().await;
+                match join_handle.await {
+                    Ok(true) => break,
+                    Ok(false) => {
+                        error!("mDNS responder exited with error, restarting...");
+                    },
+                    Err(e) => {
+                        error!("mDNS responder task panicked: {e}, restarting...");
+                    },
+                }
+            }
+            Ok(())
+        };
+
         let handle = async move {
-            let mdns_handle = mdns_responder.run_handle();
-
-            futures::try_join!(http_handle, mdns_handle.map(|_| Ok(())))?;
-
+            futures::try_join!(http_handle, mdns_loop)?;
             Ok(())
         }
         .boxed();
