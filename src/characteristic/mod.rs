@@ -89,6 +89,9 @@ pub struct Characteristic<T: fmt::Debug + Default + Clone + Serialize + Send + S
     on_update_async: Option<Box<dyn OnUpdateFuture<T>>>,
 
     event_emitter: Option<pointer::EventEmitter>,
+
+    /// If true, GET always returns null and notifications fire unconditionally (HAP event-only semantics).
+    pub event_only: bool,
 }
 
 impl<T: fmt::Debug + Default + Clone + Serialize + Send + Sync> fmt::Debug for Characteristic<T> {
@@ -166,6 +169,7 @@ where
             on_read_async: None,
             on_update_async: None,
             event_emitter: None,
+            event_only: false,
         }
     }
 
@@ -292,7 +296,7 @@ where
 
     /// Updates the value of the characteristic.
     pub async fn update_value(&mut self, val: T) -> Result<()> {
-        if self.event_notifications == Some(true) {
+        if self.event_notifications == Some(true) || self.event_only {
             if let Some(ref event_emitter) = self.event_emitter {
                 event_emitter
                     .lock()
@@ -459,7 +463,11 @@ impl<T: fmt::Debug + Default + Clone + Serialize + Send + Sync> Serialize for Ch
         }
 
         if self.perms.contains(&Perm::PairedRead) {
-            state.serialize_field("value", &self.value)?;
+            if self.event_only {
+                state.serialize_field("value", &serde_json::Value::Null)?;
+            } else {
+                state.serialize_field("value", &self.value)?;
+            }
         }
         if let Some(ref unit) = self.unit {
             state.serialize_field("unit", unit)?;
@@ -787,6 +795,9 @@ where
     }
 
     async fn get_value(&mut self) -> Result<serde_json::Value> {
+        if self.event_only {
+            return Ok(serde_json::Value::Null);
+        }
         let value = Characteristic::get_value(self).await?;
         Ok(json!(value))
     }

@@ -45,6 +45,7 @@ impl ProgrammableSwitchEventCharacteristic {
 			max_value: Some(2),
 			min_value: Some(0),
 			step_value: Some(1),
+            event_only: true,
             ..Default::default()
         });
 
