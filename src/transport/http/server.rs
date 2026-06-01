@@ -6,6 +6,7 @@ use futures::{
 use hyper::{Body, Method, Request, Response, StatusCode, server::conn::Http, service::Service};
 use log::{debug, error, info};
 use std::{
+    error::Error as StdError,
     net::{IpAddr, SocketAddr},
     pin::Pin,
     str::FromStr,
@@ -250,10 +251,35 @@ impl Server {
                 http.http1_keep_alive(true);
                 http.http1_preserve_header_case(true);
 
-                tokio::spawn(encrypted_stream.map_err(|e| error!("{:?}", e)).map(|_| ()));
+                tokio::spawn(
+                    encrypted_stream
+                        .map_err(|e| {
+                            if e.kind() == std::io::ErrorKind::BrokenPipe
+                                || e.kind() == std::io::ErrorKind::ConnectionReset
+                            {
+                                debug!("HomeKit controller closed connection: {:?}", e);
+                            } else {
+                                error!("{:?}", e);
+                            }
+                        })
+                        .map(|_| ()),
+                );
                 tokio::spawn(
                     http.serve_connection(stream_wrapper, api)
-                        .map_err(|e| error!("{:?}", e))
+                        .map_err(|e| {
+                            let is_broken_pipe = StdError::source(&e)
+                                .and_then(|s| s.downcast_ref::<std::io::Error>())
+                                .map(|io| {
+                                    io.kind() == std::io::ErrorKind::BrokenPipe
+                                        || io.kind() == std::io::ErrorKind::ConnectionReset
+                                })
+                                .unwrap_or(false);
+                            if is_broken_pipe {
+                                debug!("HomeKit controller closed connection: {:?}", e);
+                            } else {
+                                error!("{:?}", e);
+                            }
+                        })
                         .map(|_| ()),
                 );
             }

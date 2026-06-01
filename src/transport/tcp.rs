@@ -344,7 +344,11 @@ impl EncryptedStream {
                     match AsyncWrite::poll_write(Pin::new(encrypted_stream), cx, &data) {
                         Poll::Pending => {},
                         Poll::Ready(Err(e)) => {
-                            error!("error writing to outgoing stream: {}", e);
+                            if e.kind() == ErrorKind::BrokenPipe || e.kind() == ErrorKind::ConnectionReset {
+                                debug!("HomeKit controller closed connection: {}", e);
+                            } else {
+                                error!("error writing to outgoing stream: {}", e);
+                            }
                             return Poll::Ready(Err(e));
                         },
                         Poll::Ready(Ok(w_len)) => {
