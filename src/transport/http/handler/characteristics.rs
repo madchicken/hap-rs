@@ -1,6 +1,6 @@
 use futures::future::{BoxFuture, FutureExt};
 use hyper::{Body, Response, StatusCode, Uri, body::Buf};
-use log::error;
+use log::{debug, error};
 use std::collections::HashMap;
 use url::form_urlencoded;
 
@@ -54,12 +54,10 @@ impl JsonHandlerExt for GetCharacteristics {
                     let aid = id_pair[0].parse::<u64>()?;
                     let iid = id_pair[1].parse::<u64>()?;
 
-                    let res_object = match accessory_database
-                        .lock()
-                        .await
-                        .read_characteristic(aid, iid, f_meta, f_perms, f_type, f_ev)
-                        .await
-                    {
+                    debug!("GET /characteristics: acquiring accessory_database lock for {aid}.{iid}");
+                    let db = accessory_database.lock().await;
+                    debug!("GET /characteristics: lock acquired for {aid}.{iid}");
+                    let res_object = match db.read_characteristic(aid, iid, f_meta, f_perms, f_type, f_ev).await {
                         Ok(mut res_object) => {
                             if res_object.status != Some(0) {
                                 some_err = true;
@@ -143,12 +141,10 @@ impl JsonHandlerExt for UpdateCharacteristics {
             for c in write_body.characteristics {
                 let iid = c.iid;
                 let aid = c.aid;
-                let res_object = match accessories
-                    .lock()
-                    .await
-                    .write_characteristic(c, &event_subscriptions)
-                    .await
-                {
+                debug!("PUT /characteristics: acquiring accessory_database lock for {aid}.{iid}");
+                let mut db = accessories.lock().await;
+                debug!("PUT /characteristics: lock acquired for {aid}.{iid}");
+                let res_object = match db.write_characteristic(c, &event_subscriptions).await {
                     Ok(res_object) => {
                         if res_object.status != 0 {
                             some_err = true;

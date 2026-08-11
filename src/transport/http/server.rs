@@ -101,6 +101,10 @@ impl Service<Request<Body>> for Api {
         let method = parts.method;
         let uri = parts.uri;
 
+        let method_str = method.to_string();
+        let path = uri.path().to_string();
+        info!("HAP request received: {} {}", method_str, path);
+
         let mut handler: Option<Arc<Mutex<Box<dyn HandlerExt + Send + Sync>>>> = match (method, uri.path()) {
             (Method::POST, "/pair-setup") => Some(self.handlers.pair_setup.clone()),
             (Method::POST, "/pair-verify") => Some(self.handlers.pair_verify.clone()),
@@ -120,7 +124,7 @@ impl Service<Request<Body>> for Api {
         let event_emitter = self.event_emitter.clone();
 
         let fut = async move {
-            match handler.take() {
+            let result = match handler.take() {
                 Some(handler) => {
                     handler
                         .lock()
@@ -138,7 +142,12 @@ impl Service<Request<Body>> for Api {
                         .await
                 },
                 None => future::ready(status_response(StatusCode::NOT_FOUND)).await,
+            };
+            match &result {
+                Ok(resp) => info!("HAP request completed: {} {} -> {}", method_str, path, resp.status()),
+                Err(e) => error!("HAP request failed: {} {} -> {:?}", method_str, path, e),
             }
+            result
         }
         .boxed();
 

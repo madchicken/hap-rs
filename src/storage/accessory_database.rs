@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use futures::lock::Mutex;
-use log::debug;
+use log::{debug, info};
 use serde_json::json;
 
 use crate::{
@@ -97,7 +97,13 @@ impl AccessoryDatabase {
                         if characteristic.get_id() == iid {
                             let characteristic_perms = characteristic.get_perms();
                             if characteristic_perms.contains(&Perm::PairedRead) {
+                                // Global accessory_database lock (and this accessory's own lock) are
+                                // held for the entire duration of get_value() — if the registered
+                                // on_read_async callback ever blocks, every other characteristic
+                                // GET/PUT across every accessory hangs behind this same lock.
+                                info!("accessory_database: get_value start aid={aid} iid={iid}");
                                 result_object.value = Some(characteristic.get_value().await?);
+                                info!("accessory_database: get_value done aid={aid} iid={iid}");
                                 if meta {
                                     result_object.format = Some(characteristic.get_format());
                                     result_object.unit = characteristic.get_unit();
@@ -168,7 +174,16 @@ impl AccessoryDatabase {
                             }
                             if let Some(value) = write_object.value {
                                 if characteristic_perms.contains(&Perm::PairedWrite) {
+                                    // Same global lock hazard as get_value() above, for on_update_async.
+                                    info!(
+                                        "accessory_database: set_value start aid={} iid={}",
+                                        write_object.aid, write_object.iid
+                                    );
                                     characteristic.set_value(value).await?;
+                                    info!(
+                                        "accessory_database: set_value done aid={} iid={}",
+                                        write_object.aid, write_object.iid
+                                    );
                                 } else {
                                     result_object.status = Status::ReadOnlyCharacteristic as i32;
                                 }
