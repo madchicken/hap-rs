@@ -143,7 +143,24 @@ impl FileStorage {
 
         Ok(file_names)
     }
+
+    /// Files of the stored pairings, without the admin alias (a copy of an
+    /// admin pairing, not a pairing of its own).
+    async fn list_pairing_files(&self) -> Result<Vec<String>> {
+        let pairing_dir = self.storage_path("pairings");
+        let alias = self.storage_path(ADMIN_PAIRING_ALIAS);
+        Ok(self
+            .list_files(pairing_dir)
+            .await?
+            .into_iter()
+            .filter(|file| Path::new(file) != alias)
+            .collect())
+    }
 }
+
+/// Copy of the admin pairing, used by `load_pairing` as a fallback when a
+/// controller presents an id that does not match its pairing file.
+const ADMIN_PAIRING_ALIAS: &str = "pairings/admin.json";
 
 #[async_trait]
 impl Storage for FileStorage {
@@ -187,7 +204,7 @@ impl Storage for FileStorage {
         let key = format!("pairings/{id}.json");
         let pairing_bytes = match self.read_bytes(&key).await {
             Ok(pairing) => pairing,
-            _ => self.read_bytes("pairings/admin.json").await?,
+            _ => self.read_bytes(ADMIN_PAIRING_ALIAS).await?,
         };
 
         let pairing = Pairing::from_bytes(&pairing_bytes)?;
@@ -200,7 +217,7 @@ impl Storage for FileStorage {
     async fn save_pairing(&mut self, pairing: &Pairing) -> Result<()> {
         if pairing.permissions == Permissions::Admin {
             let pairing_bytes = pairing.as_bytes()?;
-            self.write_bytes("pairings/admin.json", pairing_bytes).await?;
+            self.write_bytes(ADMIN_PAIRING_ALIAS, pairing_bytes).await?;
         }
         let key = format!("pairings/{}.json", pairing.id);
         let pairing_bytes = pairing.as_bytes()?;
@@ -209,18 +226,23 @@ impl Storage for FileStorage {
 
     async fn delete_pairing(&mut self, id: &Uuid) -> Result<()> {
         let key = format!("pairings/{id}.json");
+        let alias_is_this_pairing = match self.read_bytes(ADMIN_PAIRING_ALIAS).await {
+            Ok(bytes) => Pairing::from_bytes(&bytes).map(|p| p.id == *id).unwrap_or(false),
+            Err(_) => false,
+        };
         if self.remove_file(&key).await.is_err() {
             error!("Failed to delete pairing, trying remove admin.json");
-            self.remove_file("pairings/admin.json").await?;
+            return self.remove_file(ADMIN_PAIRING_ALIAS).await;
+        }
+        if alias_is_this_pairing {
+            self.remove_file(ADMIN_PAIRING_ALIAS).await?;
         }
         Ok(())
     }
 
     async fn list_pairings(&self) -> Result<Vec<Pairing>> {
-        let pairing_dir = self.storage_path("pairings");
-
         let mut pairings = Vec::new();
-        for key in self.list_files(pairing_dir).await? {
+        for key in self.list_pairing_files().await? {
             let pairing_bytes = self.read_bytes(&key).await?;
             let pairing = Pairing::from_bytes(&pairing_bytes)?;
             pairings.push(pairing);
@@ -230,11 +252,7 @@ impl Storage for FileStorage {
     }
 
     async fn count_pairings(&self) -> Result<usize> {
-        let pairing_dir = self.storage_path("pairings");
-
-        let count = self.list_files(pairing_dir).await?.len();
-
-        Ok(count)
+        Ok(self.list_pairing_files().await?.len())
     }
 
     async fn load_bytes(&self, key: &str) -> Result<Vec<u8>> {
@@ -258,13 +276,21 @@ mod tests {
 
     use crate::{BonjourStatusFlag, pairing::Permissions};
 
+    /// A fresh storage directory per test: the tests run in parallel.
+    fn test_dir() -> PathBuf {
+        static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!("hap-test-{}-{n}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        dir
+    }
+
     /// Ensure we can write a [`Config`](Config), then a shorter one, without corrupting data.
     #[tokio::test]
     async fn test_config_storage() {
         let mut config = Default::default();
 
-        let mut temp_dir = std::env::temp_dir();
-        temp_dir.push("hap");
+        let temp_dir = test_dir();
 
         let mut storage = FileStorage::new(&temp_dir).await.unwrap();
 
@@ -308,8 +334,7 @@ mod tests {
     async fn test_aid_cache_storage() {
         let mut aid_cache = vec![1, 2, 3, 4];
 
-        let mut temp_dir = std::env::temp_dir();
-        temp_dir.push("hap");
+        let temp_dir = test_dir();
 
         let mut storage = FileStorage::new(&temp_dir).await.unwrap();
 
@@ -345,8 +370,7 @@ mod tests {
             ],
         };
 
-        let mut temp_dir = std::env::temp_dir();
-        temp_dir.push("hap");
+        let temp_dir = test_dir();
 
         let mut storage = FileStorage::new(&temp_dir).await.unwrap();
 
@@ -389,12 +413,44 @@ mod tests {
         assert!(saved_pairing.is_err());
     }
 
+    /// The admin alias is not a pairing: it must not be counted nor listed,
+    /// and must go away with the pairing it copies.
+    #[tokio::test]
+    async fn test_admin_alias_is_not_a_pairing() {
+        let admin = Pairing {
+            id: Uuid::parse_str("bc158b86-cabf-432d-aee4-422ef0e3f1d5").unwrap(),
+            permissions: Permissions::Admin,
+            public_key: [1; 32],
+        };
+        let user = Pairing {
+            id: Uuid::parse_str("0c3e6a1c-8f1e-4c43-9c4c-2b7a0a0f5e11").unwrap(),
+            permissions: Permissions::User,
+            public_key: [2; 32],
+        };
+
+        let mut storage = FileStorage::new(&test_dir()).await.unwrap();
+        storage.save_pairing(&admin).await.unwrap();
+        storage.save_pairing(&user).await.unwrap();
+        assert_eq!(storage.count_pairings().await.unwrap(), 2);
+        assert_eq!(storage.list_pairings().await.unwrap().len(), 2);
+
+        // unknown controller ids still fall back to the admin pairing
+        let unknown = Uuid::parse_str("11111111-2222-3333-4444-555555555555").unwrap();
+        assert_eq!(storage.load_pairing(&unknown).await.unwrap(), admin);
+
+        storage.delete_pairing(&admin.id).await.unwrap();
+        assert_eq!(storage.count_pairings().await.unwrap(), 1);
+        assert!(storage.load_pairing(&unknown).await.is_err());
+
+        storage.delete_pairing(&user.id).await.unwrap();
+        assert_eq!(storage.count_pairings().await.unwrap(), 0);
+    }
+
     #[tokio::test]
     async fn test_byte_storage() {
         let mut bytes = vec![1, 2, 3, 4];
 
-        let mut temp_dir = std::env::temp_dir();
-        temp_dir.push("hap");
+        let temp_dir = test_dir();
 
         let mut storage = FileStorage::new(&temp_dir).await.unwrap();
 
