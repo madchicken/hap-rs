@@ -1044,6 +1044,7 @@ mod tests {
             on_update_async: None,
 
             event_emitter: None,
+            event_only: false,
         };
         let json = serde_json::to_string(&characteristic).unwrap();
         assert_eq!(json, "{\"iid\":1,\"type\":\"C1\",\"format\":\"uint16\",\"perms\":[\"pr\",\"ev\"],\"description\":\"Acme Tilt Angle\",\"ev\":true,\"value\":123,\"unit\":\"arcdegrees\",\"maxValue\":360,\"minValue\":0,\"minStep\":1,\"valid-values-range\":[0,360]}".to_string());
