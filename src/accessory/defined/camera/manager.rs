@@ -111,9 +111,7 @@ where
     A: CameraStreamAccessory + 'static,
     MP: MediaProvider + Send + Sync + 'static,
 {
-    pub fn new(accessory: A, provider: MP) -> Self {
-        Self { accessory, provider }
-    }
+    pub fn new(accessory: A, provider: MP) -> Self { Self { accessory, provider } }
 
     pub async fn build<S>(self, server: &S) -> Result<StreamManager<MP>, StreamManagerError>
     where
@@ -258,19 +256,16 @@ where
                 .map_err(|err| StreamManagerError::Provider(Box::new(err)))?,
         );
 
-        self.sessions.insert(
-            req.session_id,
-            SessionState {
-                session_id: req.session_id,
-                address: req.ip,
-                video_port: req.video_port,
-                audio_port: req.audio_port,
-                video_crypto: req.video_crypto,
-                audio_crypto: req.audio_crypto,
-                video_ssrc: res.video_ssrc,
-                audio_ssrc: res.audio_ssrc,
-            },
-        );
+        self.sessions.insert(req.session_id, SessionState {
+            session_id: req.session_id,
+            address: req.ip,
+            video_port: req.video_port,
+            audio_port: req.audio_port,
+            video_crypto: req.video_crypto,
+            audio_crypto: req.audio_crypto,
+            video_ssrc: res.video_ssrc,
+            audio_ssrc: res.audio_ssrc,
+        });
         self.setup_responses.insert(idx, res.tlv);
 
         Ok(())
@@ -342,9 +337,7 @@ where
         Self { accessory, inner }
     }
 
-    pub fn accessory(&self) -> pointer::Accessory {
-        self.accessory.clone()
-    }
+    pub fn accessory(&self) -> pointer::Accessory { self.accessory.clone() }
 
     pub async fn sessions(&self) -> HashMap<Uuid, SessionState> {
         let inner = self.inner.lock().await;
@@ -379,13 +372,9 @@ mod tests {
     impl MediaProvider for FakeProvider {
         type Error = FakeError;
 
-        fn address(&self, _: usize) -> Result<&IpAddr, FakeError> {
-            Ok(&ADDRESS)
-        }
+        fn address(&self, _: usize) -> Result<&IpAddr, FakeError> { Ok(&ADDRESS) }
 
-        fn options(&self, _: usize) -> Result<&StreamOptions, FakeError> {
-            Ok(&self.options)
-        }
+        fn options(&self, _: usize) -> Result<&StreamOptions, FakeError> { Ok(&self.options) }
 
         async fn start(&self, idx: usize, _: protocol::StreamInfo, s: &SessionState) -> Result<(), FakeError> {
             self.calls.lock().unwrap().push(format!("start {idx} {}", s.session_id));
@@ -428,9 +417,7 @@ mod tests {
         data
     }
 
-    fn base64_value(bytes: &[u8]) -> Value {
-        json!(BASE64_STANDARD.encode(bytes))
-    }
+    fn base64_value(bytes: &[u8]) -> Value { json!(BASE64_STANDARD.encode(bytes)) }
 
     #[tokio::test]
     async fn setup_endpoints_write_then_read_and_stream_lifecycle() {
@@ -446,14 +433,10 @@ mod tests {
                 srtp: true,
             },
         };
-        let mut doorbell = VideoDoorbellAccessory::new(
-            1,
-            1,
-            AccessoryInformation {
-                name: "Door".into(),
-                ..Default::default()
-            },
-        )
+        let mut doorbell = VideoDoorbellAccessory::new(1, 1, AccessoryInformation {
+            name: "Door".into(),
+            ..Default::default()
+        })
         .unwrap();
         let mgmt = Arc::new(Mutex::new(StreamManagerInner::new(provider)));
         attach(&mut doorbell, &mgmt).await.unwrap();
@@ -467,10 +450,9 @@ mod tests {
         let response = BASE64_STANDARD.decode(response.as_str().unwrap()).unwrap();
         let fields = tlv::decode(&response);
         assert_eq!(fields.get(&protocol::SETUP_TYPES_SESSION_ID).unwrap()[..2], [159, 74]);
-        assert_eq!(
-            fields.get(&protocol::SETUP_TYPES_STATUS).unwrap(),
-            &vec![protocol::SETUP_STATUS_SUCCESS]
-        );
+        assert_eq!(fields.get(&protocol::SETUP_TYPES_STATUS).unwrap(), &vec![
+            protocol::SETUP_STATUS_SUCCESS
+        ]);
 
         // a second read serves the same response without creating a session
         let again = HapCharacteristic::get_value(&mut stream.setup_endpoint).await.unwrap();
@@ -486,10 +468,11 @@ mod tests {
         let status = HapCharacteristic::get_value(&mut stream.streaming_status)
             .await
             .unwrap();
-        assert_eq!(
-            BASE64_STANDARD.decode(status.as_str().unwrap()).unwrap(),
-            vec![0x01, 0x01, protocol::STREAMING_STATUS_STREAMING]
-        );
+        assert_eq!(BASE64_STANDARD.decode(status.as_str().unwrap()).unwrap(), vec![
+            0x01,
+            0x01,
+            protocol::STREAMING_STATUS_STREAMING
+        ]);
 
         HapCharacteristic::set_value(
             &mut stream.selected_stream_configuration,
@@ -498,12 +481,9 @@ mod tests {
         .await
         .unwrap();
         assert!(mgmt.lock().await.sessions.is_empty());
-        assert_eq!(
-            *calls.lock().unwrap(),
-            vec![
-                "start 0 9f4a58bc-af08-4ff8-80de-e73de1277d28".to_string(),
-                "stop 0 9f4a58bc-af08-4ff8-80de-e73de1277d28".to_string(),
-            ]
-        );
+        assert_eq!(*calls.lock().unwrap(), vec![
+            "start 0 9f4a58bc-af08-4ff8-80de-e73de1277d28".to_string(),
+            "stop 0 9f4a58bc-af08-4ff8-80de-e73de1277d28".to_string(),
+        ]);
     }
 }

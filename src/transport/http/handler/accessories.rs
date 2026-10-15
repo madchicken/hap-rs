@@ -3,16 +3,15 @@ use hyper::{Body, Response, StatusCode, Uri};
 use log::info;
 
 use crate::{
-    Result, pointer,
+    Result,
+    pointer,
     transport::http::{handler::JsonHandlerExt, json_response},
 };
 
 pub struct Accessories;
 
 impl Accessories {
-    pub fn new() -> Accessories {
-        Accessories
-    }
+    pub fn new() -> Accessories { Accessories }
 }
 
 impl JsonHandlerExt for Accessories {

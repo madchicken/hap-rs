@@ -10,7 +10,8 @@ use std::{
 };
 
 use crate::{
-    BonjourStatusFlag, Result,
+    BonjourStatusFlag,
+    Result,
     accessory::HapAccessory,
     config::Config,
     event::{Event, EventEmitter},
@@ -40,13 +41,13 @@ impl IpServer {
     /// use tokio;
     ///
     /// use hap::{
-    ///     accessory::{lightbulb::LightbulbAccessory, AccessoryCategory, AccessoryInformation},
-    ///     server::{IpServer, Server},
-    ///     storage::{FileStorage, Storage},
     ///     Config,
     ///     MacAddress,
     ///     Pin,
     ///     Result,
+    ///     accessory::{AccessoryCategory, AccessoryInformation, lightbulb::LightbulbAccessory},
+    ///     server::{IpServer, Server},
+    ///     storage::{FileStorage, Storage},
     /// };
     ///
     /// #[tokio::main]
@@ -259,13 +260,9 @@ impl Server for IpServer {
         Box::pin(handle)
     }
 
-    fn config_pointer(&self) -> pointer::Config {
-        self.config.clone()
-    }
+    fn config_pointer(&self) -> pointer::Config { self.config.clone() }
 
-    fn storage_pointer(&self) -> pointer::Storage {
-        self.storage.clone()
-    }
+    fn storage_pointer(&self) -> pointer::Storage { self.storage.clone() }
 
     async fn add_accessory<A: HapAccessory + 'static>(&self, accessory: A) -> Result<pointer::Accessory> {
         let aid = accessory.get_id();

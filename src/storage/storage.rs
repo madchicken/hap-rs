@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::{pairing::Pairing, Config, Result};
+use crate::{Config, Result, pairing::Pairing};
 
 /// [`Storage`](Storage) is implemented by the persistent data storage methods HAP supports. Currently, that's just
 /// [`FileStorage`](crate::storage::FileStorage).

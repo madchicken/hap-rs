@@ -16,15 +16,19 @@ use std::{
 use tokio::net::TcpListener;
 
 use crate::{
-    Error, Result,
+    Error,
+    Result,
     event::Event,
     pointer,
     server::ResourceRequest,
     transport::{
         http::{
-            EventObject, event_response,
+            EventObject,
+            event_response,
             handler::{
-                HandlerExt, JsonHandler, TlvHandler,
+                HandlerExt,
+                JsonHandler,
+                TlvHandler,
                 accessories::Accessories,
                 characteristics::{GetCharacteristics, UpdateCharacteristics},
                 identify::Identify,
@@ -133,7 +137,7 @@ impl Service<Request<Body>> for Api {
 
         let fut = async move {
             let result = match handler.take() {
-                Some(handler) => {
+                Some(handler) =>
                     handler
                         .lock()
                         .await
@@ -147,8 +151,7 @@ impl Service<Request<Body>> for Api {
                             accessory_database,
                             event_emitter,
                         )
-                        .await
-                },
+                        .await,
                 None => future::ready(status_response(StatusCode::NOT_FOUND)).await,
             };
             match &result {

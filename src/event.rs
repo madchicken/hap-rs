@@ -19,13 +19,9 @@ pub struct EventEmitter {
 }
 
 impl EventEmitter {
-    pub fn new() -> EventEmitter {
-        EventEmitter { listeners: vec![] }
-    }
+    pub fn new() -> EventEmitter { EventEmitter { listeners: vec![] } }
 
-    pub fn add_listener(&mut self, listener: Listener) {
-        self.listeners.push(listener);
-    }
+    pub fn add_listener(&mut self, listener: Listener) { self.listeners.push(listener); }
 
     pub async fn emit(&self, event: &Event) {
         debug!("emitting event: {:?}", event);

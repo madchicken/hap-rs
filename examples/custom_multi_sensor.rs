@@ -4,11 +4,17 @@ use serde::{
 };
 
 use hap::{
-    Config, HapType, MacAddress, Pin, Result,
+    Config,
+    HapType,
+    MacAddress,
+    Pin,
+    Result,
     accessory::{AccessoryCategory, AccessoryInformation, HapAccessory},
     server::{IpServer, Server},
     service::{
-        HapService, accessory_information::AccessoryInformationService, humidity_sensor::HumiditySensorService,
+        HapService,
+        accessory_information::AccessoryInformationService,
+        humidity_sensor::HumiditySensorService,
         temperature_sensor::TemperatureSensorService,
     },
     storage::{FileStorage, Storage},
@@ -29,13 +35,9 @@ pub struct MultiSensorAccessory {
 }
 
 impl HapAccessory for MultiSensorAccessory {
-    fn get_id(&self) -> u64 {
-        self.id
-    }
+    fn get_id(&self) -> u64 { self.id }
 
-    fn set_id(&mut self, id: u64) {
-        self.id = id;
-    }
+    fn set_id(&mut self, id: u64) { self.id = id; }
 
     fn get_service(&self, hap_type: HapType) -> Option<&dyn HapService> {
         self.get_services()

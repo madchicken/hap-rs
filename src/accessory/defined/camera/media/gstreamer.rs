@@ -11,7 +11,7 @@ use crate::accessory::camera::{
 
 use super::MediaProvider;
 use tokio::{
-    sync::{oneshot, Mutex},
+    sync::{Mutex, oneshot},
     task::JoinHandle,
 };
 
@@ -149,56 +149,53 @@ impl MediaProvider for Gstreamer {
 
         let pipeline = self.pipeline(idx, stream, session)?;
         let (close, mut closed) = oneshot::channel::<oneshot::Sender<()>>();
-        current.insert(
-            idx,
-            StreamState {
-                close,
-                _handle: tokio::task::spawn_blocking(move || {
-                    log::info!("creating pipeline");
+        current.insert(idx, StreamState {
+            close,
+            _handle: tokio::task::spawn_blocking(move || {
+                log::info!("creating pipeline");
 
-                    log::debug!("gstreamer pipeline: {pipeline}");
+                log::debug!("gstreamer pipeline: {pipeline}");
 
-                    #[cfg(feature = "camera-gstreamer")]
-                    let pipeline = gst::parse::launch(&pipeline).expect("cannot build gstreamer pipeline");
-                    #[cfg(not(feature = "camera-gstreamer"))]
-                    let pipeline = gst::parse_launch(&pipeline).expect("cannot build gstreamer pipeline");
+                #[cfg(feature = "camera-gstreamer")]
+                let pipeline = gst::parse::launch(&pipeline).expect("cannot build gstreamer pipeline");
+                #[cfg(not(feature = "camera-gstreamer"))]
+                let pipeline = gst::parse_launch(&pipeline).expect("cannot build gstreamer pipeline");
 
-                    pipeline
-                        .set_state(gst::State::Playing)
-                        .expect("cannost start streamer pipeline");
+                pipeline
+                    .set_state(gst::State::Playing)
+                    .expect("cannost start streamer pipeline");
 
-                    log::info!("pipeline playing");
+                log::info!("pipeline playing");
 
-                    let mut confirmation: Option<oneshot::Sender<()>> = None;
+                let mut confirmation: Option<oneshot::Sender<()>> = None;
 
-                    let bus = pipeline.bus().unwrap();
-                    for msg in bus.iter_timed(None) {
-                        if let Ok(confirm) = closed.try_recv() {
-                            log::info!("closing gstreamer pipeline");
-                            confirmation = Some(confirm);
-                            break;
-                        }
-
-                        match msg.view() {
-                            gst::MessageView::Eos(_) => break,
-                            gst::MessageView::Error(err) => log::error!("{:?}", err),
-                            _ => (),
-                        }
+                let bus = pipeline.bus().unwrap();
+                for msg in bus.iter_timed(None) {
+                    if let Ok(confirm) = closed.try_recv() {
+                        log::info!("closing gstreamer pipeline");
+                        confirmation = Some(confirm);
+                        break;
                     }
 
-                    // Clean up
-                    pipeline
-                        .set_state(gst::State::Null)
-                        .expect("cannot clean up gstreamer pipeline");
-
-                    log::info!("gstreamer pipeline finished");
-
-                    if let Some(confirm) = confirmation {
-                        let _ = confirm.send(());
+                    match msg.view() {
+                        gst::MessageView::Eos(_) => break,
+                        gst::MessageView::Error(err) => log::error!("{:?}", err),
+                        _ => (),
                     }
-                }),
-            },
-        );
+                }
+
+                // Clean up
+                pipeline
+                    .set_state(gst::State::Null)
+                    .expect("cannot clean up gstreamer pipeline");
+
+                log::info!("gstreamer pipeline finished");
+
+                if let Some(confirm) = confirmation {
+                    let _ = confirm.send(());
+                }
+            }),
+        });
 
         Ok(())
     }

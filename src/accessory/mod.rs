@@ -2,7 +2,10 @@ use erased_serde::serialize_trait_object;
 use futures::executor;
 
 use crate::{
+    HapType,
+    Result,
     characteristic::{
+        HapCharacteristic,
         accessory_flags::AccessoryFlagsCharacteristic,
         application_matching_identifier::ApplicationMatchingIdentifierCharacteristic,
         configured_name::ConfiguredNameCharacteristic,
@@ -11,12 +14,9 @@ use crate::{
         hardware_revision::HardwareRevisionCharacteristic,
         product_data::ProductDataCharacteristic,
         software_revision::SoftwareRevisionCharacteristic,
-        HapCharacteristic,
     },
     pointer,
-    service::{accessory_information::AccessoryInformationService, HapService},
-    HapType,
-    Result,
+    service::{HapService, accessory_information::AccessoryInformationService},
 };
 
 mod category;
@@ -70,7 +70,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use hap::accessory::{outlet::OutletAccessory, AccessoryInformation};
+/// use hap::accessory::{AccessoryInformation, outlet::OutletAccessory};
 ///
 /// let information = AccessoryInformation {
 ///     manufacturer: "Acme".into(),

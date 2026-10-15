@@ -1,9 +1,12 @@
 use crate::{
-    HapType, Result,
+    HapType,
+    Result,
     accessory::{AccessoryInformation, HapAccessory},
     service::{
-        HapService, accessory_information::AccessoryInformationService,
-        camera_stream_management::CameraStreamManagementService, doorbell::DoorbellService,
+        HapService,
+        accessory_information::AccessoryInformationService,
+        camera_stream_management::CameraStreamManagementService,
+        doorbell::DoorbellService,
         microphone::MicrophoneService,
     },
 };
@@ -24,9 +27,7 @@ use manager::CameraStreamAccessory;
 struct IidAllocator(u64);
 
 impl IidAllocator {
-    fn next_for(&mut self, service: &dyn HapService) {
-        self.0 += 1 + service.get_characteristics().len() as u64;
-    }
+    fn next_for(&mut self, service: &dyn HapService) { self.0 += 1 + service.get_characteristics().len() as u64; }
 }
 
 fn find_service(services: Vec<&dyn HapService>, hap_type: HapType) -> Option<&dyn HapService> {
@@ -64,17 +65,11 @@ pub struct CameraAccessory {
 }
 
 impl HapAccessory for CameraAccessory {
-    fn get_id(&self) -> u64 {
-        self.id
-    }
+    fn get_id(&self) -> u64 { self.id }
 
-    fn set_id(&mut self, id: u64) {
-        self.id = id;
-    }
+    fn set_id(&mut self, id: u64) { self.id = id; }
 
-    fn get_service(&self, hap_type: HapType) -> Option<&dyn HapService> {
-        find_service(self.get_services(), hap_type)
-    }
+    fn get_service(&self, hap_type: HapType) -> Option<&dyn HapService> { find_service(self.get_services(), hap_type) }
 
     fn get_mut_service(&mut self, hap_type: HapType) -> Option<&mut dyn HapService> {
         find_mut_service(self.get_mut_services(), hap_type)
@@ -94,9 +89,7 @@ impl HapAccessory for CameraAccessory {
 }
 
 impl CameraStreamAccessory for CameraAccessory {
-    fn camera_streams_mut(&mut self) -> Vec<&mut CameraStreamManagementService> {
-        self.streams.iter_mut().collect()
-    }
+    fn camera_streams_mut(&mut self) -> Vec<&mut CameraStreamManagementService> { self.streams.iter_mut().collect() }
 }
 
 impl Serialize for CameraAccessory {
@@ -152,17 +145,11 @@ pub struct VideoDoorbellAccessory {
 }
 
 impl HapAccessory for VideoDoorbellAccessory {
-    fn get_id(&self) -> u64 {
-        self.id
-    }
+    fn get_id(&self) -> u64 { self.id }
 
-    fn set_id(&mut self, id: u64) {
-        self.id = id;
-    }
+    fn set_id(&mut self, id: u64) { self.id = id; }
 
-    fn get_service(&self, hap_type: HapType) -> Option<&dyn HapService> {
-        find_service(self.get_services(), hap_type)
-    }
+    fn get_service(&self, hap_type: HapType) -> Option<&dyn HapService> { find_service(self.get_services(), hap_type) }
 
     fn get_mut_service(&mut self, hap_type: HapType) -> Option<&mut dyn HapService> {
         find_mut_service(self.get_mut_services(), hap_type)
@@ -186,9 +173,7 @@ impl HapAccessory for VideoDoorbellAccessory {
 }
 
 impl CameraStreamAccessory for VideoDoorbellAccessory {
-    fn camera_streams_mut(&mut self) -> Vec<&mut CameraStreamManagementService> {
-        self.streams.iter_mut().collect()
-    }
+    fn camera_streams_mut(&mut self) -> Vec<&mut CameraStreamManagementService> { self.streams.iter_mut().collect() }
 }
 
 impl Serialize for VideoDoorbellAccessory {
@@ -241,14 +226,10 @@ mod tests {
 
     #[test]
     fn video_doorbell_instance_ids_are_unique() {
-        let doorbell = VideoDoorbellAccessory::new(
-            1,
-            2,
-            AccessoryInformation {
-                name: "Door".into(),
-                ..Default::default()
-            },
-        )
+        let doorbell = VideoDoorbellAccessory::new(1, 2, AccessoryInformation {
+            name: "Door".into(),
+            ..Default::default()
+        })
         .unwrap();
         let ids = iids(&doorbell);
         assert_eq!(ids.len(), ids.iter().collect::<HashSet<_>>().len());
@@ -258,14 +239,10 @@ mod tests {
 
     #[test]
     fn camera_instance_ids_are_unique() {
-        let camera = CameraAccessory::new(
-            1,
-            1,
-            AccessoryInformation {
-                name: "Cam".into(),
-                ..Default::default()
-            },
-        )
+        let camera = CameraAccessory::new(1, 1, AccessoryInformation {
+            name: "Cam".into(),
+            ..Default::default()
+        })
         .unwrap();
         let ids = iids(&camera);
         assert_eq!(ids.len(), ids.iter().collect::<HashSet<_>>().len());

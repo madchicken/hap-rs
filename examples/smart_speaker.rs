@@ -1,11 +1,11 @@
 use hap::{
-    accessory::{AccessoryCategory, AccessoryInformation, smart_speaker::SmartSpeakerAccessory},
-    server::{IpServer, Server},
-    storage::{FileStorage, Storage},
     Config,
     MacAddress,
     Pin,
     Result,
+    accessory::{AccessoryCategory, AccessoryInformation, smart_speaker::SmartSpeakerAccessory},
+    server::{IpServer, Server},
+    storage::{FileStorage, Storage},
 };
 
 #[tokio::main]

@@ -3,7 +3,10 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use hap::{
-    Config, MacAddress, Pin, Result,
+    Config,
+    MacAddress,
+    Pin,
+    Result,
     accessory::{AccessoryCategory, AccessoryInformation, lightbulb::LightbulbAccessory},
     characteristic::AsyncCharacteristicCallbacks,
     futures::future::FutureExt,
@@ -18,13 +21,10 @@ struct LightbulbState {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut lightbulb = LightbulbAccessory::new(
-        1,
-        AccessoryInformation {
-            name: "Acme Stateful Lightbulb".into(),
-            ..Default::default()
-        },
-    )?;
+    let mut lightbulb = LightbulbAccessory::new(1, AccessoryInformation {
+        name: "Acme Stateful Lightbulb".into(),
+        ..Default::default()
+    })?;
 
     let mut storage = FileStorage::current_dir().await?;
 

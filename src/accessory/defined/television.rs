@@ -1,10 +1,13 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::{
-    HapType, Result,
+    HapType,
+    Result,
     accessory::{AccessoryInformation, HapAccessory},
     service::{
-        HapService, accessory_information::AccessoryInformationService, speaker::SpeakerService,
+        HapService,
+        accessory_information::AccessoryInformationService,
+        speaker::SpeakerService,
         television::TelevisionService,
     },
 };
@@ -48,13 +51,9 @@ impl TelevisionAccessory {
 }
 
 impl HapAccessory for TelevisionAccessory {
-    fn get_id(&self) -> u64 {
-        self.id
-    }
+    fn get_id(&self) -> u64 { self.id }
 
-    fn set_id(&mut self, id: u64) {
-        self.id = id;
-    }
+    fn set_id(&mut self, id: u64) { self.id = id; }
 
     fn get_service(&self, hap_type: HapType) -> Option<&dyn HapService> {
         self.get_services()

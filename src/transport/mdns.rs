@@ -101,7 +101,5 @@ impl MdnsResponder {
 }
 
 impl Drop for MdnsResponder {
-    fn drop(&mut self) {
-        let _ = self.stop();
-    }
+    fn drop(&mut self) { let _ = self.stop(); }
 }

@@ -5,7 +5,11 @@ use serde::{
 use uuid::Uuid;
 
 use hap::{
-    Config, HapType, MacAddress, Pin, Result,
+    Config,
+    HapType,
+    MacAddress,
+    Pin,
+    Result,
     accessory::{AccessoryCategory, AccessoryInformation, HapAccessory},
     characteristic::{Characteristic, Format, HapCharacteristic, Perm},
     server::{IpServer, Server},
@@ -36,45 +40,25 @@ pub struct FooService {
 }
 
 impl HapService for FooService {
-    fn get_id(&self) -> u64 {
-        self.id
-    }
+    fn get_id(&self) -> u64 { self.id }
 
-    fn set_id(&mut self, id: u64) {
-        self.id = id;
-    }
+    fn set_id(&mut self, id: u64) { self.id = id; }
 
-    fn get_type(&self) -> HapType {
-        self.hap_type
-    }
+    fn get_type(&self) -> HapType { self.hap_type }
 
-    fn set_type(&mut self, hap_type: HapType) {
-        self.hap_type = hap_type;
-    }
+    fn set_type(&mut self, hap_type: HapType) { self.hap_type = hap_type; }
 
-    fn get_hidden(&self) -> bool {
-        self.hidden
-    }
+    fn get_hidden(&self) -> bool { self.hidden }
 
-    fn set_hidden(&mut self, hidden: bool) {
-        self.hidden = hidden;
-    }
+    fn set_hidden(&mut self, hidden: bool) { self.hidden = hidden; }
 
-    fn get_primary(&self) -> bool {
-        self.primary
-    }
+    fn get_primary(&self) -> bool { self.primary }
 
-    fn set_primary(&mut self, primary: bool) {
-        self.primary = primary;
-    }
+    fn set_primary(&mut self, primary: bool) { self.primary = primary; }
 
-    fn get_linked_services(&self) -> Vec<u64> {
-        self.linked_services.clone()
-    }
+    fn get_linked_services(&self) -> Vec<u64> { self.linked_services.clone() }
 
-    fn set_linked_services(&mut self, linked_services: Vec<u64>) {
-        self.linked_services = linked_services;
-    }
+    fn set_linked_services(&mut self, linked_services: Vec<u64>) { self.linked_services = linked_services; }
 
     fn get_characteristic(&self, hap_type: HapType) -> Option<&dyn HapCharacteristic> {
         self.get_characteristics()
@@ -90,9 +74,7 @@ impl HapService for FooService {
             .map(|v| v as _)
     }
 
-    fn get_characteristics(&self) -> Vec<&dyn HapCharacteristic> {
-        vec![&self.foo_number, &self.foo_name]
-    }
+    fn get_characteristics(&self) -> Vec<&dyn HapCharacteristic> { vec![&self.foo_number, &self.foo_name] }
 
     fn get_mut_characteristics(&mut self) -> Vec<&mut dyn HapCharacteristic> {
         vec![&mut self.foo_number, &mut self.foo_name]
@@ -127,13 +109,9 @@ pub struct FooAccessory {
 }
 
 impl HapAccessory for FooAccessory {
-    fn get_id(&self) -> u64 {
-        self.id
-    }
+    fn get_id(&self) -> u64 { self.id }
 
-    fn set_id(&mut self, id: u64) {
-        self.id = id;
-    }
+    fn set_id(&mut self, id: u64) { self.id = id; }
 
     fn get_service(&self, hap_type: HapType) -> Option<&dyn HapService> {
         self.get_services()
@@ -149,13 +127,9 @@ impl HapAccessory for FooAccessory {
             .map(|v| v as _)
     }
 
-    fn get_services(&self) -> Vec<&dyn HapService> {
-        vec![&self.accessory_information, &self.foo]
-    }
+    fn get_services(&self) -> Vec<&dyn HapService> { vec![&self.accessory_information, &self.foo] }
 
-    fn get_mut_services(&mut self) -> Vec<&mut dyn HapService> {
-        vec![&mut self.accessory_information, &mut self.foo]
-    }
+    fn get_mut_services(&mut self) -> Vec<&mut dyn HapService> { vec![&mut self.accessory_information, &mut self.foo] }
 }
 
 impl Serialize for FooAccessory {

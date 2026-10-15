@@ -12,7 +12,9 @@ use tokio::task::spawn_blocking;
 use uuid::Uuid;
 
 use crate::{
-    Config, Error, Result,
+    Config,
+    Error,
+    Result,
     pairing::{Pairing, Permissions},
     storage::Storage,
 };
@@ -178,9 +180,7 @@ impl Storage for FileStorage {
         self.write_bytes("config.json", config_bytes).await
     }
 
-    async fn delete_config(&mut self) -> Result<()> {
-        self.remove_file("config.json").await
-    }
+    async fn delete_config(&mut self) -> Result<()> { self.remove_file("config.json").await }
 
     async fn load_aid_cache(&self) -> Result<Vec<u64>> {
         let aid_cache_bytes = self.read_bytes("aid_cache.json").await?;
@@ -196,9 +196,7 @@ impl Storage for FileStorage {
         self.write_bytes("aid_cache.json", aid_cache_bytes).await
     }
 
-    async fn delete_aid_cache(&mut self) -> Result<()> {
-        self.remove_file("aid_cache.json").await
-    }
+    async fn delete_aid_cache(&mut self) -> Result<()> { self.remove_file("aid_cache.json").await }
 
     async fn load_pairing(&self, id: &Uuid) -> Result<Pairing> {
         let key = format!("pairings/{id}.json");
@@ -251,9 +249,7 @@ impl Storage for FileStorage {
         Ok(pairings)
     }
 
-    async fn count_pairings(&self) -> Result<usize> {
-        Ok(self.list_pairing_files().await?.len())
-    }
+    async fn count_pairings(&self) -> Result<usize> { Ok(self.list_pairing_files().await?.len()) }
 
     async fn load_bytes(&self, key: &str) -> Result<Vec<u8>> {
         let bytes = self.read_bytes(&format!("misc/{}", key)).await?;
@@ -265,9 +261,7 @@ impl Storage for FileStorage {
         self.write_bytes(&format!("misc/{}", key), value.to_vec()).await
     }
 
-    async fn delete_bytes(&mut self, key: &str) -> Result<()> {
-        self.remove_file(&format!("misc/{}", key)).await
-    }
+    async fn delete_bytes(&mut self, key: &str) -> Result<()> { self.remove_file(&format!("misc/{}", key)).await }
 }
 
 #[cfg(test)]

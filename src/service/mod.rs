@@ -1,6 +1,6 @@
 use erased_serde::serialize_trait_object;
 
-use crate::{characteristic::HapCharacteristic, HapType};
+use crate::{HapType, characteristic::HapCharacteristic};
 
 mod generated;
 

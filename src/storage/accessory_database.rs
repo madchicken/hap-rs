@@ -5,12 +5,12 @@ use log::{debug, info};
 use serde_json::json;
 
 use crate::{
+    Error,
+    Result,
     accessory::HapAccessory,
     characteristic::Perm,
     pointer,
     transport::http::{ReadResponseObject, Status, WriteObject, WriteResponseObject},
-    Error,
-    Result,
 };
 
 /// `AccessoryDatabase` is a wrapper type holding a list of accessories.

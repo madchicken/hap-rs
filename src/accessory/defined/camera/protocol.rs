@@ -225,19 +225,17 @@ pub struct EndpointResponse {
 pub(crate) fn setup_endpoint_response(request: &SetupEndpointRequest, address: &IpAddr) -> EndpointResponse {
     let (video_srtp_tlv, audio_srtp_tlv) = if true {
         let video = encode(vec![
-            (
-                SETUP_SRTP_PARAM_CRYPTO,
-                vec![SRTP_CRYPTO_SUITES_AES_CM_128_HMAC_SHA1_80],
-            ),
+            (SETUP_SRTP_PARAM_CRYPTO, vec![
+                SRTP_CRYPTO_SUITES_AES_CM_128_HMAC_SHA1_80,
+            ]),
             (SETUP_SRTP_PARAM_MASTER_KEY, request.video_crypto.master_key.clone()),
             (SETUP_SRTP_PARAM_MASTER_SALT, request.video_crypto.master_salt.clone()),
         ]);
 
         let audio = encode(vec![
-            (
-                SETUP_SRTP_PARAM_CRYPTO,
-                vec![SRTP_CRYPTO_SUITES_AES_CM_128_HMAC_SHA1_80],
-            ),
+            (SETUP_SRTP_PARAM_CRYPTO, vec![
+                SRTP_CRYPTO_SUITES_AES_CM_128_HMAC_SHA1_80,
+            ]),
             (SETUP_SRTP_PARAM_MASTER_KEY, request.audio_crypto.master_key.clone()),
             (SETUP_SRTP_PARAM_MASTER_SALT, request.audio_crypto.master_salt.clone()),
         ]);
@@ -254,10 +252,11 @@ pub(crate) fn setup_endpoint_response(request: &SetupEndpointRequest, address: &
     let audio_ssrc = u32::from_le_bytes(data);
 
     let res_address_tlv = encode(vec![
-        (
-            SETUP_ADDR_INFO_ADDRESS_VER,
-            vec![if address.is_ipv6() { 0x01 } else { 0x00 }],
-        ),
+        (SETUP_ADDR_INFO_ADDRESS_VER, vec![if address.is_ipv6() {
+            0x01
+        } else {
+            0x00
+        }]),
         (SETUP_ADDR_INFO_ADDRESS, address.to_string().as_bytes().to_vec()),
         (
             SETUP_ADDR_INFO_VIDEO_RTP_PORT,
@@ -838,13 +837,10 @@ mod tests {
             ]
         }));
 
-        assert_eq!(
-            &config,
-            &[
-                0x01, 0x0e, 0x01, 0x01, 0x02, 0x02, 0x09, 0x01, 0x01, 0x01, 0x02, 0x01, 0x00, 0x03, 0x01, 0x01, 0x02,
-                0x01, 0x00
-            ]
-        );
+        assert_eq!(&config, &[
+            0x01, 0x0e, 0x01, 0x01, 0x02, 0x02, 0x09, 0x01, 0x01, 0x01, 0x02, 0x01, 0x00, 0x03, 0x01, 0x01, 0x02, 0x01,
+            0x00
+        ]);
     }
 
     #[test]
