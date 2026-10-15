@@ -1,11 +1,50 @@
 use std::{cell, collections::HashMap, io, str};
 
+use base64::prelude::*;
 use byteorder::{LittleEndian, WriteBytesExt};
 use log::error;
 use srp::types::SrpAuthError;
 use thiserror::Error;
 
 use crate::{error, pairing::Permissions};
+
+#[derive(Clone, Default, Debug)]
+pub struct Tlv8(pub Vec<u8>);
+
+impl serde::Serialize for Tlv8 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let result = BASE64_STANDARD.encode(&self.0);
+
+        serializer.serialize_str(&result)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Tlv8 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::Error;
+
+        #[derive(serde::Deserialize)]
+        #[serde(untagged)]
+        enum Mixed {
+            Plain(String),
+            Vec(Vec<u8>),
+        }
+
+        match Mixed::deserialize(deserializer)? {
+            Mixed::Plain(plain) => {
+                let result = BASE64_STANDARD.decode(plain).map_err(Error::custom)?;
+                Ok(Self(result))
+            },
+            Mixed::Vec(bytes) => Ok(Self(bytes)),
+        }
+    }
+}
 
 /// Encodes a `Vec<(u8, Vec<u8>)>` in the format `(<Type>, <Value>)` to a `Vec<u8>` of concatenated TLVs.
 pub fn encode(tlvs: Vec<(u8, Vec<u8>)>) -> Vec<u8> {

@@ -20,6 +20,10 @@ exclude = [
     "rustfmt.toml",
 ]
 
+[features]
+camera-gstreamer18 = ["dep:gstreamer18"]
+camera-gstreamer = ["dep:gstreamer"]
+
 [dependencies]
 aead = "0.5.2"
 async-trait = "0.1"
@@ -48,6 +52,9 @@ url = "2.1"
 uuid = { version = "1.11.0", features = ["v4", "serde"] }
 x25519-dalek = { version = "2.0.1", features = ["getrandom"] }
 ed25519-dalek = { version = "2.1.1", features = ["std", "serde", "rand_core"] }
+hex = "0.4.3"
+gstreamer18 = { package = "gstreamer", version = "0.18", optional = true }
+gstreamer = { package = "gstreamer", version = "0.23", optional = true }
 
 [build-dependencies]
 handlebars = "6.2.0"
