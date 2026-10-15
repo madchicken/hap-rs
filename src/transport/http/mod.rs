@@ -1,14 +1,17 @@
 use std::fmt::Display;
 
 use hyper::{
-    Response, StatusCode,
+    Response,
+    StatusCode,
     body::Body,
     header::{CONTENT_LENGTH, CONTENT_TYPE},
 };
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Error, HapType, Result,
+    Error,
+    HapType,
+    Result,
     characteristic::{Format, Perm, Unit},
 };
 

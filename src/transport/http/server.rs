@@ -16,14 +16,19 @@ use std::{
 use tokio::net::TcpListener;
 
 use crate::{
-    Error, Result,
+    Error,
+    Result,
     event::Event,
     pointer,
+    server::ResourceRequest,
     transport::{
         http::{
-            EventObject, event_response,
+            EventObject,
+            event_response,
             handler::{
-                HandlerExt, JsonHandler, TlvHandler,
+                HandlerExt,
+                JsonHandler,
+                TlvHandler,
                 accessories::Accessories,
                 characteristics::{GetCharacteristics, UpdateCharacteristics},
                 identify::Identify,
@@ -54,6 +59,7 @@ struct Api {
     storage: pointer::Storage,
     accessory_database: pointer::AccessoryDatabase,
     event_emitter: pointer::EventEmitter,
+    resource_handler: pointer::ResourceHandler,
     handlers: Handlers,
 }
 
@@ -65,6 +71,7 @@ impl Api {
         storage: pointer::Storage,
         accessory_database: pointer::AccessoryDatabase,
         event_emitter: pointer::EventEmitter,
+        resource_handler: pointer::ResourceHandler,
         session_sender: oneshot::Sender<Session>,
     ) -> Self {
         Api {
@@ -74,6 +81,7 @@ impl Api {
             storage,
             accessory_database,
             event_emitter,
+            resource_handler,
             handlers: Handlers {
                 pair_setup: Arc::new(Mutex::new(Box::new(TlvHandler::from(PairSetup::new())))),
                 pair_verify: Arc::new(Mutex::new(Box::new(TlvHandler::from(PairVerify::new(session_sender))))),
@@ -105,6 +113,10 @@ impl Service<Request<Body>> for Api {
         let path = uri.path().to_string();
         info!("HAP request received: {} {}", method_str, path);
 
+        if method == Method::POST && path == "/resource" {
+            return handle_resource(self.resource_handler.clone(), body).boxed();
+        }
+
         let mut handler: Option<Arc<Mutex<Box<dyn HandlerExt + Send + Sync>>>> = match (method, uri.path()) {
             (Method::POST, "/pair-setup") => Some(self.handlers.pair_setup.clone()),
             (Method::POST, "/pair-verify") => Some(self.handlers.pair_verify.clone()),
@@ -125,7 +137,7 @@ impl Service<Request<Body>> for Api {
 
         let fut = async move {
             let result = match handler.take() {
-                Some(handler) => {
+                Some(handler) =>
                     handler
                         .lock()
                         .await
@@ -139,8 +151,7 @@ impl Service<Request<Body>> for Api {
                             accessory_database,
                             event_emitter,
                         )
-                        .await
-                },
+                        .await,
                 None => future::ready(status_response(StatusCode::NOT_FOUND)).await,
             };
             match &result {
@@ -155,6 +166,36 @@ impl Service<Request<Body>> for Api {
     }
 }
 
+/// Answers `POST /resource` (camera snapshots) through the handler registered
+/// with [`IpServer::set_resource_handler`](crate::server::IpServer::set_resource_handler).
+async fn handle_resource(handler: pointer::ResourceHandler, body: Body) -> Result<Response<Body>> {
+    let Some(handler) = handler.read().unwrap_or_else(|e| e.into_inner()).clone() else {
+        return status_response(StatusCode::NOT_FOUND);
+    };
+    let body = hyper::body::to_bytes(body).await?;
+    let request: ResourceRequest = match serde_json::from_slice(&body) {
+        Ok(request) => request,
+        Err(e) => {
+            error!("invalid /resource request: {e}");
+            return status_response(StatusCode::BAD_REQUEST);
+        },
+    };
+    if request.resource_type != "image" {
+        return status_response(StatusCode::BAD_REQUEST);
+    }
+    match handler(request).await {
+        Ok(image) => Response::builder()
+            .status(StatusCode::OK)
+            .header(hyper::header::CONTENT_TYPE, "image/jpeg")
+            .body(Body::from(image))
+            .map_err(Error::from),
+        Err(e) => {
+            error!("snapshot failed: {e}");
+            status_response(StatusCode::INTERNAL_SERVER_ERROR)
+        },
+    }
+}
+
 #[derive(Clone)]
 pub struct Server {
     config: pointer::Config,
@@ -162,6 +203,7 @@ pub struct Server {
     accessory_database: pointer::AccessoryDatabase,
     event_emitter: pointer::EventEmitter,
     mdns_responder: pointer::MdnsResponder,
+    resource_handler: pointer::ResourceHandler,
 }
 
 impl Server {
@@ -171,6 +213,7 @@ impl Server {
         accessory_database: pointer::AccessoryDatabase,
         event_emitter: pointer::EventEmitter,
         mdns_responder: pointer::MdnsResponder,
+        resource_handler: pointer::ResourceHandler,
     ) -> Self {
         Server {
             config,
@@ -178,6 +221,7 @@ impl Server {
             accessory_database,
             event_emitter,
             mdns_responder,
+            resource_handler,
         }
     }
 
@@ -222,6 +266,7 @@ impl Server {
                     storage.clone(),
                     accessory_database.clone(),
                     event_emitter.clone(),
+                    self.resource_handler.clone(),
                     session_sender,
                 );
 
@@ -297,5 +342,58 @@ impl Server {
             Ok(())
         }
         .boxed()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::RwLock;
+
+    use super::*;
+
+    fn request(kind: &str) -> Body {
+        Body::from(format!(
+            r#"{{"aid":2,"resource-type":"{kind}","image-width":640,"image-height":360}}"#
+        ))
+    }
+
+    fn slot(handler: Option<crate::server::ResourceHandler>) -> pointer::ResourceHandler {
+        Arc::new(RwLock::new(handler))
+    }
+
+    #[tokio::test]
+    async fn resource_without_handler_is_not_found() {
+        let resp = handle_resource(slot(None), request("image")).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn resource_returns_the_snapshot() {
+        let handler: crate::server::ResourceHandler = Arc::new(|req: ResourceRequest| {
+            async move {
+                assert_eq!(req.aid, Some(2));
+                assert_eq!((req.image_width, req.image_height), (640, 360));
+                Ok(vec![0xff, 0xd8, 0xff])
+            }
+            .boxed()
+        });
+        let handler = slot(Some(handler));
+
+        let resp = handle_resource(handler.clone(), request("image")).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(resp.headers()[hyper::header::CONTENT_TYPE], "image/jpeg");
+        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        assert_eq!(&body[..], &[0xff, 0xd8, 0xff]);
+
+        let resp = handle_resource(handler, request("video")).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn resource_handler_failure_is_a_server_error() {
+        let handler: crate::server::ResourceHandler =
+            Arc::new(|_: ResourceRequest| async move { Err("camera offline".into()) }.boxed());
+        let resp = handle_resource(slot(Some(handler)), request("image")).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 }

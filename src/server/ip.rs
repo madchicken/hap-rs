@@ -4,15 +4,19 @@ use futures::{
     lock::Mutex,
 };
 use log::{error, info};
-use std::sync::Arc;
+use std::{
+    error::Error as StdError,
+    sync::{Arc, RwLock},
+};
 
 use crate::{
-    BonjourStatusFlag, Result,
+    BonjourStatusFlag,
+    Result,
     accessory::HapAccessory,
     config::Config,
     event::{Event, EventEmitter},
     pointer,
-    server::Server,
+    server::{ResourceHandler, ResourceRequest, Server},
     storage::{Storage, accessory_database::AccessoryDatabase},
     transport::{http::server::Server as HttpServer, mdns::MdnsResponder},
 };
@@ -26,6 +30,7 @@ pub struct IpServer {
     http_server: HttpServer,
     mdns_responder: pointer::MdnsResponder,
     aid_cache: Arc<Mutex<Vec<u64>>>,
+    resource_handler: pointer::ResourceHandler,
 }
 
 impl IpServer {
@@ -36,13 +41,13 @@ impl IpServer {
     /// use tokio;
     ///
     /// use hap::{
-    ///     accessory::{lightbulb::LightbulbAccessory, AccessoryCategory, AccessoryInformation},
-    ///     server::{IpServer, Server},
-    ///     storage::{FileStorage, Storage},
     ///     Config,
     ///     MacAddress,
     ///     Pin,
     ///     Result,
+    ///     accessory::{AccessoryCategory, AccessoryInformation, lightbulb::LightbulbAccessory},
+    ///     server::{IpServer, Server},
+    ///     storage::{FileStorage, Storage},
     /// };
     ///
     /// #[tokio::main]
@@ -175,12 +180,14 @@ impl IpServer {
         let event_emitter = Arc::new(Mutex::new(event_emitter));
         let accessory_database = Arc::new(Mutex::new(AccessoryDatabase::new(event_emitter.clone())));
 
+        let resource_handler: pointer::ResourceHandler = Arc::new(RwLock::new(None));
         let http_server = HttpServer::new(
             config.clone(),
             storage.clone(),
             accessory_database.clone(),
             event_emitter,
             mdns_responder.clone(),
+            resource_handler.clone(),
         );
 
         let mut storage_lock = storage.lock().await;
@@ -202,9 +209,23 @@ impl IpServer {
             http_server,
             mdns_responder,
             aid_cache,
+            resource_handler,
         };
 
         Ok(server)
+    }
+
+    /// Registers the handler answering `POST /resource`, used by iOS to fetch
+    /// camera snapshots. Without a handler the route answers 404.
+    pub fn set_resource_handler<F>(&self, handler: F)
+    where
+        F: Fn(ResourceRequest) -> BoxFuture<'static, std::result::Result<Vec<u8>, Box<dyn StdError + Send + Sync>>>
+            + Send
+            + Sync
+            + 'static,
+    {
+        let handler: ResourceHandler = Arc::new(handler);
+        *self.resource_handler.write().unwrap_or_else(|e| e.into_inner()) = Some(handler);
     }
 }
 
@@ -239,13 +260,9 @@ impl Server for IpServer {
         Box::pin(handle)
     }
 
-    fn config_pointer(&self) -> pointer::Config {
-        self.config.clone()
-    }
+    fn config_pointer(&self) -> pointer::Config { self.config.clone() }
 
-    fn storage_pointer(&self) -> pointer::Storage {
-        self.storage.clone()
-    }
+    fn storage_pointer(&self) -> pointer::Storage { self.storage.clone() }
 
     async fn add_accessory<A: HapAccessory + 'static>(&self, accessory: A) -> Result<pointer::Accessory> {
         let aid = accessory.get_id();

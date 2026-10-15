@@ -1,11 +1,11 @@
 use hap::{
-    accessory::{AccessoryCategory, AccessoryInformation, light_sensor::LightSensorAccessory},
-    server::{IpServer, Server},
-    storage::{FileStorage, Storage},
     Config,
     MacAddress,
     Pin,
     Result,
+    accessory::{AccessoryCategory, AccessoryInformation, light_sensor::LightSensorAccessory},
+    server::{IpServer, Server},
+    storage::{FileStorage, Storage},
 };
 
 #[tokio::main]

@@ -1,5 +1,8 @@
 use hap::{
-    Config, MacAddress, Pin, Result,
+    Config,
+    MacAddress,
+    Pin,
+    Result,
     accessory::{AccessoryCategory, AccessoryInformation, lightbulb::LightbulbAccessory},
     characteristic::CharacteristicCallbacks,
     server::{IpServer, Server},
@@ -8,13 +11,10 @@ use hap::{
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut lightbulb = LightbulbAccessory::new(
-        1,
-        AccessoryInformation {
-            name: "Acme Lightbulb".into(),
-            ..Default::default()
-        },
-    )?;
+    let mut lightbulb = LightbulbAccessory::new(1, AccessoryInformation {
+        name: "Acme Lightbulb".into(),
+        ..Default::default()
+    })?;
 
     lightbulb.lightbulb.power_state.on_read(Some(|| {
         println!("power_state characteristic read");

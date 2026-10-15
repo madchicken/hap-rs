@@ -1,5 +1,8 @@
 use hap::{
-    Config, MacAddress, Pin, Result,
+    Config,
+    MacAddress,
+    Pin,
+    Result,
     accessory::{AccessoryCategory, AccessoryInformation, irrigation_system::IrrigationSystemAccessory},
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
@@ -7,13 +10,10 @@ use hap::{
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let irrigation_system = IrrigationSystemAccessory::new(
-        1,
-        AccessoryInformation {
-            name: "Acme Irrigation-System".into(),
-            ..Default::default()
-        },
-    )?;
+    let irrigation_system = IrrigationSystemAccessory::new(1, AccessoryInformation {
+        name: "Acme Irrigation-System".into(),
+        ..Default::default()
+    })?;
 
     let mut storage = FileStorage::current_dir().await?;
 

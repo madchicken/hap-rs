@@ -1,11 +1,11 @@
 use hap::{
-    accessory::{AccessoryCategory, AccessoryInformation, air_purifier::AirPurifierAccessory},
-    server::{IpServer, Server},
-    storage::{FileStorage, Storage},
     Config,
     MacAddress,
     Pin,
     Result,
+    accessory::{AccessoryCategory, AccessoryInformation, air_purifier::AirPurifierAccessory},
+    server::{IpServer, Server},
+    storage::{FileStorage, Storage},
 };
 
 #[tokio::main]

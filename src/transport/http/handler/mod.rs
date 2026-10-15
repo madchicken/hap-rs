@@ -2,7 +2,9 @@ use futures::future::{BoxFuture, FutureExt};
 use hyper::{Response, StatusCode, Uri, body::Body};
 
 use crate::{
-    Error, Result, pointer,
+    Error,
+    Result,
+    pointer,
     tlv::{self, Encodable},
     transport::http::{status_response, tlv_response},
 };
@@ -48,9 +50,7 @@ pub trait TlvHandlerExt {
 pub struct TlvHandler<T: TlvHandlerExt + Send + Sync>(T);
 
 impl<T: TlvHandlerExt + Send + Sync> From<T> for TlvHandler<T> {
-    fn from(inst: T) -> TlvHandler<T> {
-        TlvHandler(inst)
-    }
+    fn from(inst: T) -> TlvHandler<T> { TlvHandler(inst) }
 }
 
 impl<T: TlvHandlerExt + Send + Sync> HandlerExt for TlvHandler<T> {
@@ -98,9 +98,7 @@ pub trait JsonHandlerExt {
 pub struct JsonHandler<T: JsonHandlerExt + Send + Sync>(T);
 
 impl<T: JsonHandlerExt + Send + Sync> From<T> for JsonHandler<T> {
-    fn from(inst: T) -> JsonHandler<T> {
-        JsonHandler(inst)
-    }
+    fn from(inst: T) -> JsonHandler<T> { JsonHandler(inst) }
 }
 
 impl<T: JsonHandlerExt + Send + Sync> HandlerExt for JsonHandler<T> {

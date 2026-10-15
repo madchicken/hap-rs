@@ -1,5 +1,8 @@
 use hap::{
-    Config, MacAddress, Pin, Result,
+    Config,
+    MacAddress,
+    Pin,
+    Result,
     accessory::{AccessoryCategory, AccessoryInformation, heater_cooler::HeaterCoolerAccessory},
     server::{IpServer, Server},
     storage::{FileStorage, Storage},
@@ -7,13 +10,10 @@ use hap::{
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let heater = HeaterCoolerAccessory::new(
-        1,
-        AccessoryInformation {
-            name: "Acme Heater".into(),
-            ..Default::default()
-        },
-    )?;
+    let heater = HeaterCoolerAccessory::new(1, AccessoryInformation {
+        name: "Acme Heater".into(),
+        ..Default::default()
+    })?;
 
     let mut storage = FileStorage::current_dir().await?;
 

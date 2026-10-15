@@ -18,4 +18,6 @@ pub type Storage = Arc<Mutex<Box<dyn storage::Storage>>>;
 
 pub type Config = Arc<Mutex<crate::Config>>;
 
+pub type ResourceHandler = Arc<RwLock<Option<crate::server::ResourceHandler>>>;
+
 pub type MdnsResponder = Arc<crate::transport::mdns::MdnsResponder>;

@@ -1,11 +1,11 @@
 use hap::{
-    accessory::{AccessoryCategory, AccessoryInformation, fan::FanAccessory},
-    server::{IpServer, Server},
-    storage::{FileStorage, Storage},
     Config,
     MacAddress,
     Pin,
     Result,
+    accessory::{AccessoryCategory, AccessoryInformation, fan::FanAccessory},
+    server::{IpServer, Server},
+    storage::{FileStorage, Storage},
 };
 
 #[tokio::main]

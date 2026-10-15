@@ -315,13 +315,12 @@ fn clone_helper(
     let val = param2.as_str().unwrap();
     if let Some(s) = param.as_str() {
         match s {
-            "bool" | "uint8" | "uint16" | "uint32" | "uint64" | "int" | "int32" | "float" => {
+            "bool" | "uint8" | "uint16" | "uint32" | "uint64" | "int" | "int32" | "float" =>
                 if val.ends_with("]") {
                     out.write(val)?;
                 } else {
                     out.write(format!("*{val}").as_str())?;
-                }
-            },
+                },
             "string" | "tlv8" | "data" => {
                 out.write(format!("{val}.clone()").as_str())?;
             },
@@ -694,9 +693,7 @@ fn array_length_helper(
     Ok(())
 }
 
-fn shorten_uuid(id: &str) -> String {
-    id.trim_start_matches('0').to_owned()
-}
+fn shorten_uuid(id: &str) -> String { id.trim_start_matches('0').to_owned() }
 
 fn snake_case_helper(
     h: &Helper,

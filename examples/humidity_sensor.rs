@@ -1,11 +1,11 @@
 use hap::{
-    accessory::{AccessoryCategory, AccessoryInformation, humidity_sensor::HumiditySensorAccessory},
-    server::{IpServer, Server},
-    storage::{FileStorage, Storage},
     Config,
     MacAddress,
     Pin,
     Result,
+    accessory::{AccessoryCategory, AccessoryInformation, humidity_sensor::HumiditySensorAccessory},
+    server::{IpServer, Server},
+    storage::{FileStorage, Storage},
 };
 
 #[tokio::main]

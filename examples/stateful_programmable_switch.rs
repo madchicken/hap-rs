@@ -1,11 +1,15 @@
 use hap::{
-    accessory::{AccessoryCategory, AccessoryInformation, stateful_programmable_switch::StatefulProgrammableSwitchAccessory},
-    server::{IpServer, Server},
-    storage::{FileStorage, Storage},
     Config,
     MacAddress,
     Pin,
     Result,
+    accessory::{
+        AccessoryCategory,
+        AccessoryInformation,
+        stateful_programmable_switch::StatefulProgrammableSwitchAccessory,
+    },
+    server::{IpServer, Server},
+    storage::{FileStorage, Storage},
 };
 
 #[tokio::main]

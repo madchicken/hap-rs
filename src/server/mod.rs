@@ -3,8 +3,10 @@ use futures::future::BoxFuture;
 
 use crate::{Result, accessory::HapAccessory, pointer};
 pub use ip::IpServer;
+pub use resource::{ResourceHandler, ResourceRequest};
 
 mod ip;
+mod resource;
 
 /// [`Server`](Server) is implemented by the transport methods this crate supports. Currently, that's just
 /// [`IpServer`](IpServer).

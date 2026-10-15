@@ -15,7 +15,7 @@ use crate::{BonjourFeatureFlag, BonjourStatusFlag, Pin, accessory::AccessoryCate
 /// # Examples
 ///
 /// ```
-/// use hap::{accessory::AccessoryCategory, Config, MacAddress, Pin};
+/// use hap::{Config, MacAddress, Pin, accessory::AccessoryCategory};
 ///
 /// let config = Config {
 ///     pin: Pin::new([1, 1, 1, 2, 2, 3, 3, 3]).unwrap(),
@@ -76,9 +76,7 @@ pub struct Config {
 
 impl Config {
     /// Redetermines the `host` field to the IP of the system's first non-loopback network interface.
-    pub fn redetermine_local_ip(&mut self) {
-        self.host = get_local_ip();
-    }
+    pub fn redetermine_local_ip(&mut self) { self.host = get_local_ip(); }
 
     /// Derives mDNS TXT records from the `Config`.
     pub(crate) fn txt_records(&self) -> Vec<(String, String)> {
