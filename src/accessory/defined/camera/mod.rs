@@ -8,6 +8,7 @@ use crate::{
         camera_stream_management::CameraStreamManagementService,
         doorbell::DoorbellService,
         microphone::MicrophoneService,
+        speaker::SpeakerService,
     },
 };
 
@@ -22,12 +23,34 @@ pub mod protocol;
 
 use manager::CameraStreamAccessory;
 
-/// Hands out instance ids: every service takes one id for itself followed by
-/// one per characteristic.
+/// Hands out instance ids: the next service starts right after the highest
+/// id taken by the previous one. Generated services and the accessory
+/// information reserve ids for their optional characteristics, so counting
+/// the characteristics would hand out ids that are already taken.
 struct IidAllocator(u64);
 
 impl IidAllocator {
-    fn next_for(&mut self, service: &dyn HapService) { self.0 += 1 + service.get_characteristics().len() as u64; }
+    fn next_for(&mut self, service: &dyn HapService) {
+        let last = service
+            .get_characteristics()
+            .iter()
+            .map(|c| c.get_id())
+            .chain(std::iter::once(service.get_id()))
+            .max()
+            .unwrap_or(self.0);
+        self.0 = self.0.max(last + 1);
+    }
+}
+
+/// Speaker for the two way audio of a video doorbell: HomeKit expects it
+/// next to the microphone. Only mute and volume are exposed.
+fn new_speaker(iids: &mut IidAllocator, accessory_id: u64) -> SpeakerService {
+    let mut speaker = SpeakerService::new(iids.0, accessory_id);
+    speaker.active = None;
+    speaker.volume_control_type = None;
+    speaker.volume_selector = None;
+    iids.next_for(&speaker);
+    speaker
 }
 
 fn find_service(services: Vec<&dyn HapService>, hap_type: HapType) -> Option<&dyn HapService> {
@@ -140,6 +163,9 @@ pub struct VideoDoorbellAccessory {
     /// Microphone
     pub microphone: MicrophoneService,
 
+    /// Speaker
+    pub speaker: SpeakerService,
+
     /// Camera streams
     pub streams: Vec<CameraStreamManagementService>,
 }
@@ -156,7 +182,12 @@ impl HapAccessory for VideoDoorbellAccessory {
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {
-        let mut services: Vec<&dyn HapService> = vec![&self.accessory_information, &self.doorbell, &self.microphone];
+        let mut services: Vec<&dyn HapService> = vec![
+            &self.accessory_information,
+            &self.doorbell,
+            &self.microphone,
+            &self.speaker,
+        ];
         services.extend(self.streams.iter().map(|s| s as &dyn HapService));
         services
     }
@@ -166,6 +197,7 @@ impl HapAccessory for VideoDoorbellAccessory {
             &mut self.accessory_information,
             &mut self.doorbell,
             &mut self.microphone,
+            &mut self.speaker,
         ];
         services.extend(self.streams.iter_mut().map(|s| s as &mut dyn HapService));
         services
@@ -199,6 +231,8 @@ impl VideoDoorbellAccessory {
         let microphone = MicrophoneService::new(iids.0, id);
         iids.next_for(&microphone);
 
+        let speaker = new_speaker(&mut iids, id);
+
         let streams = new_streams(&mut iids, id, streams_count);
 
         Ok(Self {
@@ -206,6 +240,7 @@ impl VideoDoorbellAccessory {
             accessory_information,
             doorbell,
             microphone,
+            speaker,
             streams,
         })
     }
@@ -228,6 +263,8 @@ mod tests {
     fn video_doorbell_instance_ids_are_unique() {
         let doorbell = VideoDoorbellAccessory::new(1, 2, AccessoryInformation {
             name: "Door".into(),
+            firmware_revision: Some("1.0.0".into()),
+            software_revision: Some("1.0.0".into()),
             ..Default::default()
         })
         .unwrap();
@@ -235,12 +272,14 @@ mod tests {
         assert_eq!(ids.len(), ids.iter().collect::<HashSet<_>>().len());
         assert!(doorbell.doorbell.get_primary());
         assert_eq!(doorbell.streams.len(), 2);
+        assert!(doorbell.get_service(HapType::Speaker).is_some());
     }
 
     #[test]
     fn camera_instance_ids_are_unique() {
         let camera = CameraAccessory::new(1, 1, AccessoryInformation {
             name: "Cam".into(),
+            firmware_revision: Some("1.0.0".into()),
             ..Default::default()
         })
         .unwrap();

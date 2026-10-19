@@ -648,7 +648,7 @@ pub(crate) fn stream_info_response(bytes: &[u8]) -> std::result::Result<StreamIn
                     .map_or(Ok(None), |v| v.map(Some))
                     .map_err(|_| ProtocolError::ArrayConversion)?
                     .map(f32::from_le_bytes),
-                max_mtu: video_rtp_param_objs.get(&RTP_PARAM_TYPES_RTCP_SEND_INTERVAL).cloned(),
+                max_mtu: video_rtp_param_objs.get(&RTP_PARAM_TYPES_MAX_MTU).cloned(),
             });
         }
     }
