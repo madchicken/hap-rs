@@ -163,8 +163,9 @@ pub struct VideoDoorbellAccessory {
     /// Microphone
     pub microphone: MicrophoneService,
 
-    /// Speaker
-    pub speaker: SpeakerService,
+    /// Speaker, for the two way audio. Without it iOS only plays the audio
+    /// of the doorbell.
+    pub speaker: Option<SpeakerService>,
 
     /// Camera streams
     pub streams: Vec<CameraStreamManagementService>,
@@ -186,8 +187,10 @@ impl HapAccessory for VideoDoorbellAccessory {
             &self.accessory_information,
             &self.doorbell,
             &self.microphone,
-            &self.speaker,
         ];
+        if let Some(speaker) = &self.speaker {
+            services.push(speaker);
+        }
         services.extend(self.streams.iter().map(|s| s as &dyn HapService));
         services
     }
@@ -197,8 +200,10 @@ impl HapAccessory for VideoDoorbellAccessory {
             &mut self.accessory_information,
             &mut self.doorbell,
             &mut self.microphone,
-            &mut self.speaker,
         ];
+        if let Some(speaker) = &mut self.speaker {
+            services.push(speaker);
+        }
         services.extend(self.streams.iter_mut().map(|s| s as &mut dyn HapService));
         services
     }
@@ -240,9 +245,16 @@ impl VideoDoorbellAccessory {
             accessory_information,
             doorbell,
             microphone,
-            speaker,
+            speaker: Some(speaker),
             streams,
         })
+    }
+
+    /// Drops the speaker: the doorbell only offers one way audio. The
+    /// instance ids of the other services do not change.
+    pub fn without_speaker(mut self) -> Self {
+        self.speaker = None;
+        self
     }
 }
 
@@ -273,6 +285,28 @@ mod tests {
         assert!(doorbell.doorbell.get_primary());
         assert_eq!(doorbell.streams.len(), 2);
         assert!(doorbell.get_service(HapType::Speaker).is_some());
+    }
+
+    #[test]
+    fn video_doorbell_without_speaker_keeps_the_other_ids() {
+        let information = || AccessoryInformation {
+            name: "Door".into(),
+            ..Default::default()
+        };
+        let with = VideoDoorbellAccessory::new(1, 1, information()).unwrap();
+        let without = VideoDoorbellAccessory::new(1, 1, information())
+            .unwrap()
+            .without_speaker();
+        assert!(without.get_service(HapType::Speaker).is_none());
+        let speaker = with.speaker.as_ref().unwrap();
+        let speaker_ids: HashSet<u64> = std::iter::once(speaker.get_id())
+            .chain(speaker.get_characteristics().into_iter().map(|c| c.get_id()))
+            .collect();
+        let expected: Vec<u64> = iids(&with)
+            .into_iter()
+            .filter(|id| !speaker_ids.contains(id))
+            .collect();
+        assert_eq!(iids(&without), expected);
     }
 
     #[test]
