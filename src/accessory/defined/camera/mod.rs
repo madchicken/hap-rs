@@ -183,11 +183,7 @@ impl HapAccessory for VideoDoorbellAccessory {
     }
 
     fn get_services(&self) -> Vec<&dyn HapService> {
-        let mut services: Vec<&dyn HapService> = vec![
-            &self.accessory_information,
-            &self.doorbell,
-            &self.microphone,
-        ];
+        let mut services: Vec<&dyn HapService> = vec![&self.accessory_information, &self.doorbell, &self.microphone];
         if let Some(speaker) = &self.speaker {
             services.push(speaker);
         }
@@ -302,10 +298,7 @@ mod tests {
         let speaker_ids: HashSet<u64> = std::iter::once(speaker.get_id())
             .chain(speaker.get_characteristics().into_iter().map(|c| c.get_id()))
             .collect();
-        let expected: Vec<u64> = iids(&with)
-            .into_iter()
-            .filter(|id| !speaker_ids.contains(id))
-            .collect();
+        let expected: Vec<u64> = iids(&with).into_iter().filter(|id| !speaker_ids.contains(id)).collect();
         assert_eq!(iids(&without), expected);
     }
 
